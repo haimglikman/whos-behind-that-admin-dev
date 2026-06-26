@@ -247,7 +247,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.11.0</div>
+      <div class="version-badge" id="version-badge">v2.11.1</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -302,7 +302,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 
         <div class="server-bar" id="server-bar">
           <div class="server-bar-label">Server URL</div>
-          <input type="text" class="server-url-input" id="server-url-input" placeholder="https://whos-behind-that-server-dev.onrender.com" oninput="saveServerUrl()" />
+          <input type="text" class="server-url-input" id="server-url-input" placeholder="https://whos-behind-that-server.onrender.com" oninput="saveServerUrl()" />
           <div class="server-bar-msg" id="server-bar-msg"></div>
         </div>
 
@@ -444,12 +444,13 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
               <input type="text" class="filter-input" id="f-url" placeholder="e.g. x.com/..." oninput="applyFilters()" />
             </div>
             <div class="filter-group">
-              <div class="filter-label">Platform</div>
+              <div class="filter-label">Source</div>
               <select class="filter-select" id="f-platform" onchange="applyFilters()">
-                <option value="">All platforms</option>
+                <option value="">All sources</option>
                 <option value="x">X (Twitter)</option>
                 <option value="instagram">Instagram</option>
                 <option value="facebook">Facebook</option>
+                <option value="news">News (all)</option>
               </select>
             </div>
             <div class="filter-group">
@@ -509,12 +510,6 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
             <div class="filter-group">
               <div class="filter-label">Actor handle</div>
               <input type="text" class="filter-input" id="f-actor" placeholder="e.g. @khamenei" oninput="applyFilters()" />
-            </div>
-            <div class="filter-group">
-              <div class="filter-label">News site</div>
-              <select class="filter-select" id="f-newssite" onchange="applyFilters()">
-                <option value="">All sites</option>
-              </select>
             </div>
           </div>
           <!-- Entity multi-select — full width row -->
@@ -959,7 +954,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <div class="step-card"><div class="step-num">4</div><div class="step-body"><h4>Create a second GitHub repo</h4><p>Name it <code>whos-behind-that-server</code>. Upload the three server files: <code>server.js</code>, <code>package.json</code>, <code>.gitignore</code>.</p></div></div>
           <div class="step-card"><div class="step-num">5</div><div class="step-body"><h4>Deploy to Render</h4><p>Go to <code>render.com</code> → sign up with GitHub → <strong>New → Web Service</strong> → connect your server repo. Settings: Build command <code>npm install</code>, Start command <code>npm start</code>, Instance type <strong>Free</strong>.</p></div></div>
           <div class="step-card"><div class="step-num">6</div><div class="step-body"><h4>Add your Anthropic API key</h4><p>In Render, go to your service → <strong>Environment</strong> → Add variable: <code>ANTHROPIC_API_KEY</code> = your <code>sk-ant-...</code> key. Click Save — Render will redeploy automatically.</p></div></div>
-          <div class="step-card"><div class="step-num">7</div><div class="step-body"><h4>Connect the app to your server</h4><p>Copy your Render service URL (e.g. <code>https://whos-behind-that-server-dev.onrender.com</code>). Paste it into the server URL field at the top of the Analyze tab. It turns green when connected.</p></div></div>
+          <div class="step-card"><div class="step-num">7</div><div class="step-body"><h4>Connect the app to your server</h4><p>Copy your Render service URL (e.g. <code>https://whos-behind-that-server.onrender.com</code>). Paste it into the server URL field at the top of the Analyze tab. It turns green when connected.</p></div></div>
           <div class="step-card"><div class="step-num">8</div><div class="step-body"><h4>Share the app</h4><p>Send anyone your GitHub Pages URL. They just paste a post URL and click Analyze — no setup, no API keys needed on their end.</p></div></div>
 
           <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px">Part 3 — Shared history (PostgreSQL)</div>
@@ -1073,7 +1068,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 <div class="bottom-bar">
   <span><span class="status-dot warn" id="bar-status-dot"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.11.0</span></span>
+  <span>app v<span id="bar-app-ver">2.11.1</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
@@ -1256,7 +1251,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.11.0';
+const APP_VERSION = '2.11.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1466,7 +1461,7 @@ function recordScan() {
   localStorage.setItem('wbt_scans', JSON.stringify(s));
   updateScanCounter();
 }
-function getServerUrl() { return localStorage.getItem('wbt_server_url') || 'https://whos-behind-that-server-dev.onrender.com'; }
+function getServerUrl() { return localStorage.getItem('wbt_server_url') || 'https://whos-behind-that-server.onrender.com'; }
 function getActors() { try { return JSON.parse(localStorage.getItem('wbt_actors') || '{}'); } catch(e) { return {}; } }
 function saveActors(a) { localStorage.setItem('wbt_actors', JSON.stringify(a)); updateActorsCount(); }
 function updateActorsCount() {
@@ -2077,17 +2072,51 @@ function initEntityFilter() {
   const entities = getEntities();
   const dropdown = document.getElementById('f-entity-dropdown');
   if (!dropdown) return;
-  dropdown.innerHTML = entities.map(function(e) {
+
+  // Only show entities that appear in at least one history entry
+  const h = getHistory();
+  const entityNamesInHistory = new Set();
+  h.forEach(function(e) {
+    (e.topMatches||[]).forEach(function(m){ entityNamesInHistory.add(m.toLowerCase()); });
+    if (e.fullResult) {
+      (e.fullResult.matches||[]).forEach(function(m){ if(m.name) entityNamesInHistory.add(m.name.toLowerCase()); });
+    }
+  });
+
+  const filtered = entities.filter(function(e){ return entityNamesInHistory.has(e.name.toLowerCase()); });
+  const list = filtered.length > 0 ? filtered : entities; // fallback to all if history empty
+
+  dropdown.innerHTML = list.map(function(e) {
     const sel = selectedEntities.some(function(s){ return s.id === e.id; });
     return '<div class="entity-option' + (sel?' selected':'') + '" data-id="' + e.id + '" data-name="' + e.name.replace(/"/g,'&quot;') + '" onmousedown="toggleEntityFilter(' + e.id + ',\'' + e.name.replace(/'/g,"\\'") + '\')">' +
       '<input type="checkbox" id="eo-' + e.id + '"' + (sel?' checked':'') + '> ' + e.name +
     '</div>';
   }).join('');
+
+  // Also populate news sites into Source dropdown
+  const sourceEl = document.getElementById('f-platform');
+  if (sourceEl) {
+    // Remove existing news site options (keep first 5: all/x/instagram/facebook/news-all)
+    while (sourceEl.options.length > 5) sourceEl.remove(5);
+    const sites = {};
+    h.forEach(function(e) {
+      if (e.platform === 'news' && e.url) {
+        try { const domain = new URL(e.url).hostname.replace(/^www\./,''); sites[domain] = getDomainDisplayName(e.url); } catch(err) {}
+      }
+    });
+    Object.keys(sites).sort(function(a,b){ return sites[a].localeCompare(sites[b]); }).forEach(function(domain) {
+      const opt = document.createElement('option');
+      opt.value = 'news:' + domain;
+      opt.textContent = sites[domain];
+      sourceEl.appendChild(opt);
+    });
+  }
 }
 function openEntityDropdown() { initEntityFilter(); const dd=document.getElementById('f-entity-dropdown'); if(dd) dd.classList.add('open'); }
 function closeEntityDropdown() { const dd=document.getElementById('f-entity-dropdown'); if(dd) dd.classList.remove('open'); }
 function filterEntityOptions() {
   const q=(document.getElementById('f-entity-search').value||'').toLowerCase();
+  if (!document.getElementById('f-entity-dropdown').innerHTML) initEntityFilter();
   document.querySelectorAll('#f-entity-dropdown .entity-option').forEach(function(opt){ opt.style.display=(!q||opt.dataset.name.toLowerCase().includes(q))?'':'none'; });
   openEntityDropdown();
 }
@@ -2107,6 +2136,9 @@ function applyFilters() {
   const scanId = (document.getElementById('f-scan-id')||{value:''}).value.trim().toLowerCase();
   const urlFilter = (document.getElementById('f-url')||{value:''}).value.trim().toLowerCase();
   const platform = document.getElementById('f-platform').value;
+  // platform can be: '' | 'x' | 'instagram' | 'facebook' | 'news' | 'news:domain.com'
+  const platformBase = platform.startsWith('news:') ? 'news' : platform;
+  const newsSiteFilter = platform.startsWith('news:') ? platform.slice(5) : '';
   const appVersion = document.getElementById('f-app-version').value.trim();
   const serverVersion = document.getElementById('f-server-version').value.trim();
   const dateFrom = document.getElementById('f-date-from').value;
@@ -2118,7 +2150,7 @@ function applyFilters() {
   const source = document.getElementById('f-source') ? document.getElementById('f-source').value : '';
   const user = document.getElementById('f-user') ? document.getElementById('f-user').value : '';
   const actorFilter = (document.getElementById('f-actor')||{value:''}).value.trim().toLowerCase().replace(/^@/,'');
-  const newsSiteFilter = (document.getElementById('f-newssite')||{value:''}).value;
+  // newsSiteFilter already declared above from platform value
 
   // Populate news site dropdown dynamically from history
   const newsSiteEl = document.getElementById('f-newssite');
@@ -2144,8 +2176,8 @@ function applyFilters() {
   const filtered = h.filter(function(e) {
     if (scanId && !(e.scanId||'').toLowerCase().includes(scanId)) return false;
     if (urlFilter && !(e.url||'').toLowerCase().includes(urlFilter)) return false;
-    if (platform && e.platform && e.platform !== platform) return false;
-    if (platform && !e.platform) { if (detectPlatformClient(e.url||'') !== platform) return false; }
+    if (platformBase && e.platform && e.platform !== platformBase) return false;
+    if (platformBase && !e.platform) { if (detectPlatformClient(e.url||'') !== platformBase) return false; }
     if (appVersion && !(e.appVersion||'').includes(appVersion)) return false;
     if (serverVersion && !(e.serverVersion||'').includes(serverVersion)) return false;
     if (selectedEntities.length > 0) {
@@ -2179,7 +2211,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  ['f-platform','f-alignment','f-has-comment','f-source','f-user','f-newssite'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-platform','f-alignment','f-has-comment','f-source','f-user'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
   ['f-app-version','f-server-version','f-scan-id','f-url','f-date-from','f-date-to','f-min-score','f-min-ai','f-actor'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
   selectedEntities=[];
   renderEntityTags();
