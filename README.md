@@ -1,4 +1,4 @@
-### v2.11.0 (admin) | Server: v1.17.0 | Client: v1.13.0
+### v2.11.0 (admin) | Server: v1.17.1 | Client: v1.13.0
 
 - New Investigate tab — full one-pager with timeline, legend, synopsis, technical details, excluded posts
 - + Investigate button on every history card
