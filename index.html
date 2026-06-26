@@ -302,7 +302,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 
         <div class="server-bar" id="server-bar">
           <div class="server-bar-label">Server URL</div>
-          <input type="text" class="server-url-input" id="server-url-input" placeholder="https://DEV-SERVER-URL-HERE.onrender.com" oninput="saveServerUrl()" />
+          <input type="text" class="server-url-input" id="server-url-input" placeholder="https://https://whos-behind-that-server-dev.onrender.com.onrender.com" oninput="saveServerUrl()" />
           <div class="server-bar-msg" id="server-bar-msg"></div>
         </div>
 
@@ -959,7 +959,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <div class="step-card"><div class="step-num">4</div><div class="step-body"><h4>Create a second GitHub repo</h4><p>Name it <code>whos-behind-that-server</code>. Upload the three server files: <code>server.js</code>, <code>package.json</code>, <code>.gitignore</code>.</p></div></div>
           <div class="step-card"><div class="step-num">5</div><div class="step-body"><h4>Deploy to Render</h4><p>Go to <code>render.com</code> → sign up with GitHub → <strong>New → Web Service</strong> → connect your server repo. Settings: Build command <code>npm install</code>, Start command <code>npm start</code>, Instance type <strong>Free</strong>.</p></div></div>
           <div class="step-card"><div class="step-num">6</div><div class="step-body"><h4>Add your Anthropic API key</h4><p>In Render, go to your service → <strong>Environment</strong> → Add variable: <code>ANTHROPIC_API_KEY</code> = your <code>sk-ant-...</code> key. Click Save — Render will redeploy automatically.</p></div></div>
-          <div class="step-card"><div class="step-num">7</div><div class="step-body"><h4>Connect the app to your server</h4><p>Copy your Render service URL (e.g. <code>https://DEV-SERVER-URL-HERE.onrender.com</code>). Paste it into the server URL field at the top of the Analyze tab. It turns green when connected.</p></div></div>
+          <div class="step-card"><div class="step-num">7</div><div class="step-body"><h4>Connect the app to your server</h4><p>Copy your Render service URL (e.g. <code>https://https://whos-behind-that-server-dev.onrender.com.onrender.com</code>). Paste it into the server URL field at the top of the Analyze tab. It turns green when connected.</p></div></div>
           <div class="step-card"><div class="step-num">8</div><div class="step-body"><h4>Share the app</h4><p>Send anyone your GitHub Pages URL. They just paste a post URL and click Analyze — no setup, no API keys needed on their end.</p></div></div>
 
           <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px">Part 3 — Shared history (PostgreSQL)</div>
@@ -1466,7 +1466,7 @@ function recordScan() {
   localStorage.setItem('wbt_scans', JSON.stringify(s));
   updateScanCounter();
 }
-function getServerUrl() { return localStorage.getItem('wbt_server_url') || 'https://DEV-SERVER-URL-HERE.onrender.com'; }
+function getServerUrl() { return localStorage.getItem('wbt_server_url') || 'https://https://whos-behind-that-server-dev.onrender.com.onrender.com'; }
 function getActors() { try { return JSON.parse(localStorage.getItem('wbt_actors') || '{}'); } catch(e) { return {}; } }
 function saveActors(a) { localStorage.setItem('wbt_actors', JSON.stringify(a)); updateActorsCount(); }
 function updateActorsCount() {
