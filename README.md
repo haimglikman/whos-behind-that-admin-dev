@@ -1,3 +1,11 @@
+### v2.12.1 (admin-dev) | Server: v1.18.1 | Client: v1.14.1
+- Timeline: same-date posts now sit side by side with horizontal offset, smaller circles
+- Timeline: date label shown once per date, each post gets its own narrative title below
+- Basket: hovering a post shows tooltip with entity, score and post excerpt
+- Legend: each included post shows its one-liner narrative summary below the metadata row
+- Clusters history: each cluster is clickable — opens full investigate view reconstructed from saved data
+- Investigate: buttons auto-clear after Run investigation is pressed
+
 ### v2.12.0 (admin-dev) | Server: v1.18.0 | Client: v1.14.0
 - New Clusters history tab (below Investigate) — shows all previous cluster analyses from server DB
 - Investigation: clusters now saved to server DB after synthesis with auto-generated cluster ID (WBT-CLU-...)
