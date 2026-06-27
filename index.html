@@ -247,7 +247,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.11.1</div>
+      <div class="version-badge" id="version-badge">v2.12.0</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -271,6 +271,10 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="5" cy="7.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="4" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="11" r="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="6.4" y1="6.7" x2="8.7" y2="4.8" stroke="currentColor" stroke-width="1.2"/><line x1="6.4" y1="8.3" x2="8.7" y2="10.2" stroke="currentColor" stroke-width="1.2"/></svg>
         Investigate
         <span class="nav-counter" id="investigate-count" style="background:var(--blue);color:#fff">0</span>
+      </button>
+      <button class="nav-item" id="nav-clusters" onclick="showPage('clusters',this)">
+        <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="3.5" cy="7.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="11.5" cy="3.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="11.5" cy="11.5" r="2" stroke="currentColor" stroke-width="1.2"/><line x1="5.4" y1="6.5" x2="9.6" y2="4.4" stroke="currentColor" stroke-width="1.1"/><line x1="5.4" y1="8.5" x2="9.6" y2="10.6" stroke="currentColor" stroke-width="1.1"/></svg>
+        Clusters history
       </button>
       <button class="nav-item" id="nav-database" onclick="showPage('database',this)">
         <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><ellipse cx="7.5" cy="4" rx="5.5" ry="2" stroke="currentColor" stroke-width="1.3"/><path d="M2 4v3.5c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V4" stroke="currentColor" stroke-width="1.3"/><path d="M2 7.5V11c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V7.5" stroke="currentColor" stroke-width="1.3"/></svg>
@@ -563,6 +567,17 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 
       </div><!-- end page-content -->
     </div><!-- end page-investigate -->
+
+    <!-- ── CLUSTERS HISTORY PAGE ── -->
+    <div id="page-clusters" class="page">
+      <div class="page-content">
+        <div class="page-header">
+          <h1>Clusters history</h1>
+          <p>Previous investigation results — all cluster analyses run across admin and client</p>
+        </div>
+        <div id="clusters-list"><div style="font-size:12px;color:var(--text3);padding:20px 0">Loading...</div></div>
+      </div>
+    </div><!-- end page-clusters -->
 
     <!-- ── DATABASE PAGE ── -->
     <div id="page-database" class="page">
@@ -1068,7 +1083,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 <div class="bottom-bar">
   <span><span class="status-dot warn" id="bar-status-dot"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.11.1</span></span>
+  <span>app v<span id="bar-app-ver">2.12.0</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
@@ -1251,7 +1266,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.11.1';
+const APP_VERSION = '2.12.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1711,6 +1726,11 @@ async function runInvestigation() {
     const results = syntheses.map(function(r, i) {
       return r.status === 'fulfilled' ? r.value.synthesis : { clusterName: 'Cluster ' + (i+1), synopsis: 'Synthesis failed.', postIds: clusters[i] };
     });
+    // Save each cluster to server DB
+    const srvVer = await fetchSrvVersion(serverUrl).catch(function(){ return '?'; });
+    await Promise.allSettled(results.map(function(s, i) {
+      return saveClusterToServer(s, clusters[i], srvVer);
+    }));
     renderInvestigateResults(results, clusters, isolated, connections, basket);
   } catch(err) {
     resultsEl.innerHTML = '<div class="card"><div style="font-size:12px;color:var(--red)">Investigation failed: ' + escHtml(err.message) + '</div></div>';
@@ -1807,11 +1827,18 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
   // Timeline axis
   svg += '<line x1="' + PAD + '" y1="' + BOTTOM + '" x2="' + (W-PAD) + '" y2="' + BOTTOM + '" stroke="#cfe0f5" stroke-width="1"/>';
 
-  // Date ticks
+  // Date ticks — deduplicate same-date labels
+  const shownDates = new Set();
   sorted.forEach(function(p) {
     const x = xOf(p); const d = p.ts ? new Date(p.ts) : null;
     svg += '<line x1="' + x + '" y1="' + (BOTTOM-3) + '" x2="' + x + '" y2="' + (BOTTOM+3) + '" stroke="#cfe0f5" stroke-width="1"/>';
-    if (d) svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#94a3b8" x="' + x + '" y="' + (BOTTOM+14) + '" text-anchor="middle">' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + '</text>';
+    if (d) {
+      const dateKey = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+      if (!shownDates.has(dateKey)) {
+        shownDates.add(dateKey);
+        svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#94a3b8" x="' + x + '" y="' + (BOTTOM+14) + '" text-anchor="middle">' + dateKey + '</text>';
+      }
+    }
   });
 
   // Connection arcs
@@ -1866,9 +1893,12 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     const textColor = isMulti ? '#1e293b' : isIsolated ? '#888780' : CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length].text;
     svg += '<text font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="' + textColor + '" x="' + x + '" y="' + (y-4) + '" text-anchor="middle">P' + idx + '</text>';
     svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="' + textColor + '" x="' + x + '" y="' + (y+8) + '" text-anchor="middle">' + (p.overallScore||0) + '%</text>';
-    // Label below axis
+    // Label below axis — stack entities if multiple posts share same X position
+    const postsAtSameX = sorted.filter(function(q){ return Math.abs(xOf(q) - x) < 2; });
+    const myXIndex = postsAtSameX.indexOf(p);
     const labelWords = (p.topMatches||[])[0] || '';
-    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#475569" x="' + x + '" y="' + (BOTTOM+28) + '" text-anchor="middle">' + escHtml(labelWords.slice(0,18)) + '</text>';
+    const labelY = BOTTOM + 28 + (myXIndex * 12);
+    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#475569" x="' + x + '" y="' + labelY + '" text-anchor="middle">' + escHtml(labelWords.slice(0,18)) + '</text>';
   });
 
   svg += '</svg></div>';
@@ -1978,6 +2008,7 @@ function showPage(name, el) {
   if (name === 'actors') { renderActors(); syncActorsFromServer(); }
   if (name === 'stats') { renderStatsPage(); fetchTokenStats(); }
   if (name === 'investigate') { renderBasket(); updatePendingBanner(); }
+  if (name === 'clusters') { renderClustersHistory(); }
   if (history.state && history.state.page !== name) {
     history.pushState({ page: name }, '', '#' + name);
   }
@@ -2007,6 +2038,7 @@ window.addEventListener('popstate', function(e) {
   if (name === 'actors') { renderActors(); syncActorsFromServer(); }
   if (name === 'stats') { renderStatsPage(); fetchTokenStats(); }
   if (name === 'investigate') { renderBasket(); updatePendingBanner(); }
+  if (name === 'clusters') { renderClustersHistory(); }
 });
 
 // ─────────────────────────────────────────────
@@ -2584,6 +2616,87 @@ function generateScanId(appVer, srvVer, userPrefix) {
   const db = 'DB' + getDbVersion().replace(/\./g,'');
   const user = userPrefix || 'ADMIN';
   return 'WBT-' + user + '-' + date + '-' + av + '-' + sv + '-' + db + '-' + random;
+}
+
+function generateClusterId(srvVer) {
+  const now = new Date();
+  const date = now.getFullYear().toString() +
+    String(now.getMonth()+1).padStart(2,'0') +
+    String(now.getDate()).padStart(2,'0');
+  const random = Math.random().toString(36).substring(2,6).toUpperCase();
+  const av = APP_VERSION.replace(/\./g,'');
+  const sv = (srvVer||'?').replace(/\./g,'');
+  return 'WBT-CLU-' + date + '-' + av + '-' + sv + '-' + random;
+}
+
+async function saveClusterToServer(synthesis, postIds, srvVer) {
+  const serverUrl = getServerUrl();
+  if (!serverUrl) return;
+  const clusterId = generateClusterId(srvVer);
+  try {
+    await fetch(serverUrl + '/clusters/save', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        clusterId,
+        clusterName: synthesis.clusterName || '',
+        synopsis: synthesis.synopsis || '',
+        dominantEntity: synthesis.dominantEntity || '',
+        connectionType: synthesis.connectionType || '',
+        frame: synthesis.frame || '',
+        event: synthesis.event || '',
+        postIds: postIds || [],
+        postCount: (postIds||[]).length,
+        source: 'admin',
+        appVersion: APP_VERSION,
+        serverVersion: srvVer
+      })
+    });
+    return clusterId;
+  } catch(e) { console.warn('Cluster save failed:', e.message); return null; }
+}
+
+async function loadClustersHistory() {
+  const serverUrl = getServerUrl();
+  if (!serverUrl) return [];
+  try {
+    const res = await fetch(serverUrl + '/clusters/list');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.clusters || [];
+  } catch(e) { return []; }
+}
+
+function renderClustersHistory() {
+  const el = document.getElementById('clusters-list');
+  if (!el) return;
+  el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">Loading...</div>';
+  loadClustersHistory().then(function(clusters) {
+    if (!clusters.length) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:20px 0">No cluster analyses yet. Run an investigation to see results here.</div>';
+      return;
+    }
+    el.innerHTML = clusters.map(function(c) {
+      const d = c.ts ? new Date(c.ts) : null;
+      const dateStr = d ? d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
+      const srcBadge = '<span class="source-badge ' + (c.source||'admin') + '">' + (c.source||'admin') + '</span>';
+      return '<div class="card" style="margin-bottom:10px">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
+          '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">' + escHtml(c.id) + '</span>' +
+          srcBadge +
+          '<span style="margin-left:auto;font-size:10px;color:var(--text3)">' + dateStr + '</span>' +
+        '</div>' +
+        '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">' + escHtml(c.clusterName||'Unnamed cluster') + '</div>' +
+        (c.synopsis ? '<p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:8px">' + escHtml(c.synopsis) + '</p>' : '') +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">' +
+          (c.dominantEntity ? '<span class="history-tag" style="color:var(--blue);border-color:rgba(26,107,255,.2)">' + escHtml(c.dominantEntity) + '</span>' : '') +
+          (c.connectionType ? '<span class="history-tag">' + escHtml(c.connectionType) + '</span>' : '') +
+          (c.frame ? '<span class="history-tag">Frame: ' + escHtml(c.frame) + '</span>' : '') +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--text3)">' + (c.postCount||0) + ' posts · ' + (c.appVersion||'') + ' / srv ' + (c.serverVersion||'') + '</div>' +
+      '</div>';
+    }).join('');
+  });
 }
 
 // Migrate legacy localStorage entries to add missing fields
