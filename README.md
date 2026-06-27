@@ -1,3 +1,9 @@
+### v2.12.2 — bug fix (admin-dev) | Server: v1.18.1 | Client: v1.14.2
+- Timeline: close-proximity date labels now skip rendering when within 52px of previous label, preventing overlap
+- Timeline: entity titles below nodes now constrained to node width using SVG textLength — no bleed into adjacent nodes
+- Clusters history: view button now works — fixed double JSON.stringify bug that broke inline onclick handler
+- Entity match filter: now filters results on every keystroke immediately, not just after first population
+
 ### v2.12.1 (admin-dev) | Server: v1.18.1 | Client: v1.14.1
 - Timeline: same-date posts now sit side by side with horizontal offset, smaller circles
 - Timeline: date label shown once per date, each post gets its own narrative title below
