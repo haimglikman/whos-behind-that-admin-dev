@@ -247,7 +247,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.12.0</div>
+      <div class="version-badge" id="version-badge">v2.12.1</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -1083,7 +1083,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 <div class="bottom-bar">
   <span><span class="status-dot warn" id="bar-status-dot"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.12.0</span></span>
+  <span>app v<span id="bar-app-ver">2.12.1</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
@@ -1266,7 +1266,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.12.0';
+const APP_VERSION = '2.12.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1669,7 +1669,10 @@ function renderBasket() {
     const d = e.ts ? new Date(e.ts) : null;
     const dateStr = d ? d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
     const platform = e.platform === 'news' ? getDomainDisplayName(e.url) : (e.platform || 'unknown');
-    return '<div class="basket-item">' +
+    const topEntity = (e.topMatches||[])[0] || e.overallLabel || '—';
+    const excerpt = (e.postText||'').slice(0,180).replace(/</g,'&lt;');
+    const tooltip = escHtml(topEntity) + ' · ' + (e.overallScore||0) + '%' + (e.postText ? '&#10;&#10;"' + excerpt + (e.postText.length > 180 ? '…' : '') + '"' : '');
+    return '<div class="basket-item" style="position:relative" title="' + tooltip + '">' +
       '<button class="basket-remove" onclick="removeFromInvestigation(\'' + escHtml(e.scanId) + '\')" title="Remove">×</button>' +
       '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">' + escHtml(e.scanId) + '</span>' +
       '<span style="font-size:11px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(e.url) + '</span>' +
@@ -1701,6 +1704,8 @@ async function runInvestigation() {
   btn.textContent = 'Running...';
   resultsEl.style.display = 'block';
   resultsEl.innerHTML = '<div class="card" style="text-align:center;padding:24px"><div style="font-size:13px;color:var(--text3)">Detecting connections between ' + basket.length + ' posts...</div></div>';
+  // Clear all investigate buttons now that investigation is running
+  document.querySelectorAll('[data-investigate]').forEach(function(b){ b.textContent = '+ Investigate'; b.classList.remove('added'); });
   try {
     // Stage 1: detect connections
     const detectRes = await fetch(serverUrl + '/investigate/detect', {
@@ -1746,6 +1751,15 @@ function renderInvestigateResults(syntheses, clusters, isolated, connections, ba
   const postMap = {};
   basket.forEach(function(p){ postMap[p.scanId] = p; });
 
+  // Attach postSummaries from syntheses to each post in basket
+  syntheses.forEach(function(s) {
+    if (!s.postSummaries || !s.postIds) return;
+    s.postIds.forEach(function(scanId, i) {
+      if (postMap[scanId]) postMap[scanId]._summary = s.postSummaries[i] || '';
+    });
+  });
+  const enrichedBasket = basket.map(function(p){ return postMap[p.scanId] || p; });
+
   // Determine which clusters each post belongs to (for multi-cluster detection)
   const postClusterMap = {};
   clusters.forEach(function(cluster, ci) {
@@ -1756,10 +1770,10 @@ function renderInvestigateResults(syntheses, clusters, isolated, connections, ba
   });
 
   // Timeline SVG
-  html += renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, connections);
+  html += renderInvestigateTimeline(enrichedBasket, clusters, isolated, postClusterMap, connections);
 
   // Legend
-  html += renderInvestigateLegend(basket, clusters, isolated, postClusterMap);
+  html += renderInvestigateLegend(enrichedBasket, clusters, isolated, postClusterMap);
 
   // Synopsis per cluster
   syntheses.forEach(function(s, i) {
@@ -1809,11 +1823,30 @@ function renderInvestigateResults(syntheses, clusters, isolated, connections, ba
 function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, connections) {
   if (basket.length === 0) return '';
   const sorted = basket.slice().sort(function(a,b){ return new Date(a.ts||0) - new Date(b.ts||0); });
-  const W = 600, H = 220, PAD = 40, BOTTOM = 170, nodeR = 22;
+  const W = 600, H = 240, PAD = 40, BOTTOM = 180, nodeR = 18;
   const times = sorted.map(function(p){ return new Date(p.ts||0).getTime(); });
   const tMin = Math.min.apply(null,times), tMax = Math.max.apply(null,times);
   const tRange = tMax - tMin || 1;
-  function xOf(p){ return PAD + (new Date(p.ts||0).getTime() - tMin) / tRange * (W - 2*PAD); }
+
+  // Group posts by date key to handle same-date collisions
+  const dateGroups = {};
+  sorted.forEach(function(p) {
+    const d = p.ts ? new Date(p.ts) : new Date(0);
+    const key = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    if (!dateGroups[key]) dateGroups[key] = [];
+    dateGroups[key].push(p.scanId);
+  });
+
+  // Compute X with horizontal offset for same-date posts
+  function xOf(p) {
+    const d = p.ts ? new Date(p.ts) : new Date(0);
+    const key = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    const group = dateGroups[key];
+    const idx = group.indexOf(p.scanId);
+    const baseX = PAD + (d.getTime() - tMin) / tRange * (W - 2*PAD);
+    const offset = group.length > 1 ? (idx - (group.length-1)/2) * (nodeR*2 + 4) : 0;
+    return baseX + offset;
+  }
 
   // Vertical position: cluster posts higher, isolated lower
   function yOf(scanId) {
@@ -1827,17 +1860,17 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
   // Timeline axis
   svg += '<line x1="' + PAD + '" y1="' + BOTTOM + '" x2="' + (W-PAD) + '" y2="' + BOTTOM + '" stroke="#cfe0f5" stroke-width="1"/>';
 
-  // Date ticks — deduplicate same-date labels
+  // Date ticks — deduplicate, use base X (no offset)
   const shownDates = new Set();
   sorted.forEach(function(p) {
-    const x = xOf(p); const d = p.ts ? new Date(p.ts) : null;
-    svg += '<line x1="' + x + '" y1="' + (BOTTOM-3) + '" x2="' + x + '" y2="' + (BOTTOM+3) + '" stroke="#cfe0f5" stroke-width="1"/>';
-    if (d) {
-      const dateKey = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-      if (!shownDates.has(dateKey)) {
-        shownDates.add(dateKey);
-        svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#94a3b8" x="' + x + '" y="' + (BOTTOM+14) + '" text-anchor="middle">' + dateKey + '</text>';
-      }
+    const d = p.ts ? new Date(p.ts) : null;
+    if (!d) return;
+    const dateKey = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    if (!shownDates.has(dateKey)) {
+      shownDates.add(dateKey);
+      const baseX = PAD + (d.getTime() - tMin) / tRange * (W - 2*PAD);
+      svg += '<line x1="' + baseX + '" y1="' + (BOTTOM-3) + '" x2="' + baseX + '" y2="' + (BOTTOM+3) + '" stroke="#cfe0f5" stroke-width="1"/>';
+      svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#94a3b8" x="' + baseX + '" y="' + (BOTTOM+14) + '" text-anchor="middle">' + dateKey + '</text>';
     }
   });
 
@@ -1893,12 +1926,14 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     const textColor = isMulti ? '#1e293b' : isIsolated ? '#888780' : CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length].text;
     svg += '<text font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="' + textColor + '" x="' + x + '" y="' + (y-4) + '" text-anchor="middle">P' + idx + '</text>';
     svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="' + textColor + '" x="' + x + '" y="' + (y+8) + '" text-anchor="middle">' + (p.overallScore||0) + '%</text>';
-    // Label below axis — stack entities if multiple posts share same X position
-    const postsAtSameX = sorted.filter(function(q){ return Math.abs(xOf(q) - x) < 2; });
-    const myXIndex = postsAtSameX.indexOf(p);
-    const labelWords = (p.topMatches||[])[0] || '';
-    const labelY = BOTTOM + 28 + (myXIndex * 12);
-    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#475569" x="' + x + '" y="' + labelY + '" text-anchor="middle">' + escHtml(labelWords.slice(0,18)) + '</text>';
+    // Title below axis from postSummaries — each same-date post stacks its own label
+    const d = p.ts ? new Date(p.ts) : new Date(0);
+    const dateKey = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    const group = dateGroups[dateKey] || [];
+    const groupIdx = group.indexOf(p.scanId);
+    const title = (p._summary || (p.topMatches||[])[0] || '').slice(0, 22);
+    const labelY = BOTTOM + 28 + (groupIdx > 0 ? 0 : 0); // each has own x, so label at same Y is fine
+    svg += '<text font-family="Nunito,sans-serif" font-size="8" fill="#475569" x="' + x + '" y="' + (BOTTOM+26) + '" text-anchor="middle">' + escHtml(title) + '</text>';
   });
 
   svg += '</svg></div>';
@@ -1920,13 +1955,16 @@ function renderInvestigateLegend(basket, clusters, isolated, postClusterMap) {
       const color = cis.length > 0 ? CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length] : CLUSTER_COLORS[0];
       const d = p.ts ? new Date(p.ts) : null;
       const platform = p.platform === 'news' ? getDomainDisplayName(p.url) : (p.platform || '');
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:12px">';
+      html += '<div style="padding:7px 0;border-top:1px solid var(--border)">';
+      html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px">';
       html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:' + color.bg + ';border:1.5px solid ' + color.border + ';font-size:10px;font-weight:700;color:' + color.text + ';flex-shrink:0">P' + idx + '</span>';
       html += '<span style="font-weight:700;color:var(--text)">' + escHtml((p.topMatches||[])[0] || p.overallLabel || '') + '</span>';
       html += '<span style="font-family:var(--mono);font-size:11px;font-weight:700;color:' + color.text + ';background:' + color.bg + ';border:1px solid ' + color.border + ';border-radius:99px;padding:1px 8px">' + (p.overallScore||0) + '%</span>';
       if (d) html += '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + d.toLocaleDateString() + '</span>';
       if (platform) html += '<span style="font-size:10px;color:var(--text3)">' + escHtml(platform) + '</span>';
       html += '<span style="font-family:var(--mono);font-size:9px;color:var(--text3)">' + escHtml(p.scanId) + '</span>';
+      html += '</div>';
+      if (p._summary) html += '<div style="font-size:11px;color:var(--text2);margin-top:3px;margin-left:30px;font-style:italic;line-height:1.5">' + escHtml(p._summary) + '</div>';
       html += '</div>';
     });
   }
@@ -1937,11 +1975,13 @@ function renderInvestigateLegend(basket, clusters, isolated, postClusterMap) {
     sorted.filter(function(p){ return isolated.includes(p.scanId); }).forEach(function(p) {
       const idx = sorted.indexOf(p) + 1;
       const d = p.ts ? new Date(p.ts) : null;
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:12px">';
+      html += '<div style="padding:7px 0;border-top:1px solid var(--border)">';
+      html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px">';
       html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#f1efe8;border:1px solid #b4b2a9;font-size:10px;font-weight:700;color:#888780;flex-shrink:0">P' + idx + '</span>';
       html += '<span style="color:var(--text3)">' + escHtml((p.topMatches||[])[0] || p.overallLabel || '') + '</span>';
       html += '<span style="font-size:10px;color:var(--text3);margin-left:auto;font-style:italic">No connection detected</span>';
       if (d) html += '<span style="font-size:10px;color:var(--text3)">' + d.toLocaleDateString() + '</span>';
+      html += '</div>';
       html += '</div>';
     });
   }
@@ -2680,11 +2720,12 @@ function renderClustersHistory() {
       const d = c.ts ? new Date(c.ts) : null;
       const dateStr = d ? d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
       const srcBadge = '<span class="source-badge ' + (c.source||'admin') + '">' + (c.source||'admin') + '</span>';
-      return '<div class="card" style="margin-bottom:10px">' +
+      return '<div class="card" style="margin-bottom:10px;cursor:pointer" onclick="openClusterFromHistory(' + JSON.stringify(JSON.stringify(c)) + ')">' +
         '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
           '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">' + escHtml(c.id) + '</span>' +
           srcBadge +
           '<span style="margin-left:auto;font-size:10px;color:var(--text3)">' + dateStr + '</span>' +
+          '<span style="font-size:10px;color:var(--blue)">view →</span>' +
         '</div>' +
         '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">' + escHtml(c.clusterName||'Unnamed cluster') + '</div>' +
         (c.synopsis ? '<p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:8px">' + escHtml(c.synopsis) + '</p>' : '') +
@@ -2697,6 +2738,70 @@ function renderClustersHistory() {
       '</div>';
     }).join('');
   });
+}
+
+function openClusterFromHistory(clusterJson) {
+  const c = JSON.parse(clusterJson);
+  // Navigate to investigate tab and reconstruct the view from saved data
+  showPage('investigate', document.getElementById('nav-investigate'));
+  const resultsEl = document.getElementById('investigate-results');
+  if (!resultsEl) return;
+  resultsEl.style.display = 'block';
+
+  // Gather post data from local history by matching post IDs
+  const h = getHistory();
+  const posts = (c.postIds||[]).map(function(scanId) {
+    return h.find(function(e){ return e.scanId === scanId; }) || { scanId: scanId, url: scanId, postText: '', topMatches: [], overallScore: 0, overallLabel: '' };
+  });
+
+  // Attach post summaries if available
+  const summaries = c.postSummaries || [];
+  posts.forEach(function(p, i) { p._summary = summaries[i] || ''; });
+
+  // Reconstruct synthesis object
+  const synthesis = {
+    clusterName: c.clusterName,
+    synopsis: c.synopsis,
+    dominantEntity: c.dominantEntity,
+    connectionType: c.connectionType,
+    frame: c.frame,
+    event: c.event,
+    postIds: c.postIds,
+    postSummaries: summaries
+  };
+
+  // Build minimal cluster/connection structure for display
+  const clusters = [c.postIds||[]];
+  const isolated = [];
+  const connections = [];
+  const postClusterMap = {};
+  (c.postIds||[]).forEach(function(id){ postClusterMap[id] = [0]; });
+
+  // Enrich basket-like array with summaries
+  const enrichedPosts = posts.map(function(p, i){ return Object.assign({}, p, {_summary: summaries[i]||''}); });
+
+  let html = '';
+  html += renderInvestigateTimeline(enrichedPosts, clusters, isolated, postClusterMap, connections);
+  html += renderInvestigateLegend(enrichedPosts, clusters, isolated, postClusterMap);
+
+  // Synopsis card
+  const color = CLUSTER_COLORS[0];
+  html += '<div class="card" style="margin-bottom:10px">';
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+  html += '<span style="background:' + color.bg + ';color:' + color.text + ';border:1px solid ' + color.border + ';border-radius:99px;padding:2px 10px;font-size:10px;font-weight:700">' + escHtml(c.clusterName||'Cluster') + '</span>';
+  if (c.frame) html += '<span style="font-size:11px;color:var(--text3)">Frame: ' + escHtml(c.frame) + '</span>';
+  if (c.connectionType) html += '<span style="font-size:10px;color:var(--text3);margin-left:auto;font-style:italic">' + escHtml(c.connectionType) + '</span>';
+  html += '</div>';
+  html += '<p style="font-size:12px;line-height:1.75;color:var(--text2);margin-bottom:10px">' + escHtml(c.synopsis||'') + '</p>';
+  html += '<div style="border-top:1px solid var(--border);padding-top:10px">';
+  html += '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Technical details</div>';
+  if (c.dominantEntity) html += '<div style="display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--border)"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;width:110px;flex-shrink:0;padding-top:1px">Who it serves</span><span style="font-size:12px;color:var(--text2)">' + escHtml(c.dominantEntity) + '</span></div>';
+  if (c.connectionType) html += '<div style="display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--border)"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;width:110px;flex-shrink:0;padding-top:1px">Connection type</span><span style="font-size:12px;color:var(--text2)">' + escHtml(c.connectionType) + '</span></div>';
+  if (c.event) html += '<div style="display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--border)"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;width:110px;flex-shrink:0;padding-top:1px">Event</span><span style="font-size:12px;color:var(--text2)">' + escHtml(c.event) + '</span></div>';
+  html += '<div style="font-size:10px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">Cluster ID: <span style="font-family:var(--mono)">' + escHtml(c.id) + '</span></div>';
+  html += '</div></div>';
+
+  resultsEl.innerHTML = html;
 }
 
 // Migrate legacy localStorage entries to add missing fields
