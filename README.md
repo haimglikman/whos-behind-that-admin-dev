@@ -1,3 +1,11 @@
+### v2.12.4 — bug fix (admin-dev) | Server: v1.18.3 | Client: v1.14.4
+- Entity match: now filters by prefix (startsWith) not substring — typing "i" shows Iran and Itamar Ben Gvir, not all entities containing "i"
+- Timeline: entity name labels now clamp to frame edges — leftmost posts no longer escape the SVG boundary
+- Timeline: long entity names now truncated with ellipsis (…), full name shown on hover via SVG tooltip
+- Cluster cards: cluster ID shown prominently at top in blue monospace badge
+- Cluster cards: editable name field with Save button — renames cluster in server DB, default is AI-generated name
+- Same rename field shown when reopening a cluster from history
+
 ### v2.12.3 — bug fix (admin-dev) | Server: v1.18.2 | Client: v1.14.3
 - Timeline: same-date posts now stack entity labels vertically (Iran on top, Turkey below)
 - Timeline: removed textLength/lengthAdjust from labels — crisp font rendering restored
