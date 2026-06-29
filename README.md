@@ -1,3 +1,9 @@
+### v2.12.3 — bug fix (admin-dev) | Server: v1.18.2 | Client: v1.14.3
+- Timeline: same-date posts now stack entity labels vertically (Iran on top, Turkey below)
+- Timeline: removed textLength/lengthAdjust from labels — crisp font rendering restored
+- Cluster history: omitted posts now shown identically to live investigation view
+- Entity match filter: fixed — typing now filters results immediately without rebuilding the dropdown
+
 ### v2.12.2 — bug fix (admin-dev) | Server: v1.18.1 | Client: v1.14.2
 - Timeline: close-proximity date labels now skip rendering when within 52px of previous label, preventing overlap
 - Timeline: entity titles below nodes now constrained to node width using SVG textLength — no bleed into adjacent nodes
