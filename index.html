@@ -247,7 +247,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.12.3</div>
+      <div class="version-badge" id="version-badge">v2.12.4</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -1083,7 +1083,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 <div class="bottom-bar">
   <span><span class="status-dot warn" id="bar-status-dot"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.12.3</span></span>
+  <span>app v<span id="bar-app-ver">2.12.4</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
@@ -1266,7 +1266,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.12.3';
+const APP_VERSION = '2.12.4';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1731,27 +1731,31 @@ async function runInvestigation() {
     const results = syntheses.map(function(r, i) {
       return r.status === 'fulfilled' ? r.value.synthesis : { clusterName: 'Cluster ' + (i+1), synopsis: 'Synthesis failed.', postIds: clusters[i] };
     });
-    // Save each cluster to server DB
+    // Generate cluster IDs upfront so they can be shown in UI
     const srvVer = await fetchSrvVersion(serverUrl).catch(function(){ return '?'; });
+    const clusterIds = results.map(function(){ return generateClusterId(srvVer); });
+    // Save each cluster to server DB using pre-generated IDs
     await Promise.allSettled(results.map(function(s, i) {
-      return saveClusterToServer(s, clusters[i], isolated, srvVer);
+      return saveClusterToServer(s, clusters[i], isolated, srvVer, clusterIds[i]);
     }));
-    renderInvestigateResults(results, clusters, isolated, connections, basket);
+    renderInvestigateResults(results, clusters, isolated, connections, basket, clusterIds, serverUrl);
   } catch(err) {
     resultsEl.innerHTML = '<div class="card"><div style="font-size:12px;color:var(--red)">Investigation failed: ' + escHtml(err.message) + '</div></div>';
   }
   btn.disabled = false; btn.textContent = '✦ Run investigation';
 }
 
-function renderInvestigateResults(syntheses, clusters, isolated, connections, basket) {
+function renderInvestigateResults(syntheses, clusters, isolated, connections, basket, clusterIds, serverUrl) {
   const resultsEl = document.getElementById('investigate-results');
+  clusterIds = clusterIds || [];
+  serverUrl = serverUrl || getServerUrl();
   let html = '';
 
   // Build post lookup
   const postMap = {};
   basket.forEach(function(p){ postMap[p.scanId] = p; });
 
-  // Attach postSummaries from syntheses to each post in basket
+  // Attach postSummaries
   syntheses.forEach(function(s) {
     if (!s.postSummaries || !s.postIds) return;
     s.postIds.forEach(function(scanId, i) {
@@ -1760,7 +1764,7 @@ function renderInvestigateResults(syntheses, clusters, isolated, connections, ba
   });
   const enrichedBasket = basket.map(function(p){ return postMap[p.scanId] || p; });
 
-  // Determine which clusters each post belongs to (for multi-cluster detection)
+  // Determine cluster membership
   const postClusterMap = {};
   clusters.forEach(function(cluster, ci) {
     cluster.forEach(function(scanId) {
@@ -1769,25 +1773,34 @@ function renderInvestigateResults(syntheses, clusters, isolated, connections, ba
     });
   });
 
-  // Timeline SVG
+  // Timeline + Legend
   html += renderInvestigateTimeline(enrichedBasket, clusters, isolated, postClusterMap, connections);
-
-  // Legend
   html += renderInvestigateLegend(enrichedBasket, clusters, isolated, postClusterMap);
 
   // Synopsis per cluster
   syntheses.forEach(function(s, i) {
     const color = CLUSTER_COLORS[i % CLUSTER_COLORS.length];
+    const cid = clusterIds[i] || '';
     const clusterPosts = (s.postIds || clusters[i] || []).map(function(id){ return postMap[id]; }).filter(Boolean);
-    html += '<div class="card" style="margin-bottom:10px">';
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
-    html += '<span style="background:' + color.bg + ';color:' + color.text + ';border:1px solid ' + color.border + ';border-radius:99px;padding:2px 10px;font-size:10px;font-weight:700">' + escHtml(s.clusterName || 'Cluster ' + (i+1)) + '</span>';
-    if (s.frame) html += '<span style="font-size:11px;color:var(--text3)">Frame: ' + escHtml(s.frame) + '</span>';
-    if (s.connectionType) html += '<span style="font-size:10px;color:var(--text3);margin-left:auto;font-style:italic">' + escHtml(s.connectionType) + '</span>';
-    html += '</div>';
+    html += '<div class="card" style="margin-bottom:10px;padding:12px 16px">';
+    // Cluster ID header
+    if (cid) {
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">';
+      html += '<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-dim);border:1px solid rgba(26,107,255,.2);border-radius:6px;padding:3px 10px">' + escHtml(cid) + '</span>';
+      html += '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + new Date().toLocaleDateString() + '</span>';
+      html += '</div>';
+    }
+    // Rename field
+    html += '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Cluster name</div>';
+    html += '<div style="display:flex;gap:8px;align-items:center">';
+    html += '<input type="text" class="filter-input" style="flex:1;font-size:13px;font-weight:600;color:var(--text)" id="cluster-name-' + i + '" value="' + escHtml(s.clusterName || 'Cluster ' + (i+1)) + '" />';
+    html += '<button class="btn btn-sm btn-primary" style="font-size:11px;white-space:nowrap" data-cid="' + escHtml(cid) + '" data-idx="' + i + '" onclick="renameCluster(this.dataset.cid, this.dataset.idx)">Save name</button>';
+    html += '</div></div>';
+    // Frame / connection type
+    if (s.frame) html += '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">Frame: <span style="color:var(--text2)">' + escHtml(s.frame) + '</span></div>';
+    if (s.connectionType) html += '<div style="font-size:10px;color:var(--text3);font-style:italic;margin-bottom:8px">' + escHtml(s.connectionType) + '</div>';
     html += '<p style="font-size:12px;line-height:1.75;color:var(--text2);margin-bottom:10px">' + escHtml(s.synopsis || '') + '</p>';
-    // Technical details
-    html += '<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px">';
+    html += '<div style="border-top:1px solid var(--border);padding-top:10px">';
     html += '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Technical details</div>';
     if (s.dominantEntity) html += '<div style="display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--border)"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;width:110px;flex-shrink:0;padding-top:1px">Who it serves</span><span style="font-size:12px;color:var(--text2)">' + escHtml(s.dominantEntity) + '</span></div>';
     if (s.connectionType) html += '<div style="display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--border)"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;width:110px;flex-shrink:0;padding-top:1px">Connection type</span><span style="font-size:12px;color:var(--text2)">' + escHtml(s.connectionType) + '</span></div>';
@@ -1931,14 +1944,20 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     const textColor = isMulti ? '#1e293b' : isIsolated ? '#888780' : CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length].text;
     svg += '<text font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="' + textColor + '" x="' + x + '" y="' + (y-4) + '" text-anchor="middle">P' + idx + '</text>';
     svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="' + textColor + '" x="' + x + '" y="' + (y+8) + '" text-anchor="middle">' + (p.overallScore||0) + '%</text>';
-    // Title below axis — stack vertically for same-date posts, normal font (no textLength distortion)
+    // Title below axis — stack vertically for same-date posts, clamp X to frame edges
     const d3 = p.ts ? new Date(p.ts) : new Date(0);
     const dateKey3 = d3.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
     const group3 = dateGroups[dateKey3] || [];
     const groupIdx3 = group3.indexOf(p.scanId);
-    const title = (p._summary || (p.topMatches||[])[0] || '').slice(0, 18);
+    const fullTitle = (p._summary || (p.topMatches||[])[0] || '');
+    const shortTitle = fullTitle.slice(0, 18) + (fullTitle.length > 18 ? '…' : '');
     const titleY = BOTTOM + 26 + (groupIdx3 * 11);
-    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#475569" x="' + x + '" y="' + titleY + '" text-anchor="middle">' + escHtml(title) + '</text>';
+    // Clamp label X so it doesn't escape frame edges (60px from each edge)
+    const labelX = Math.max(PAD + 30, Math.min(W - PAD - 30, x));
+    const anchor = labelX < x + 5 && labelX > x - 5 ? 'middle' : (labelX < x ? 'start' : 'end');
+    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#475569" x="' + labelX + '" y="' + titleY + '" text-anchor="' + anchor + '">' +
+      '<title>' + escHtml(fullTitle) + '</title>' + escHtml(shortTitle) +
+    '</text>';
   });
 
   svg += '</svg></div>';
@@ -2203,7 +2222,7 @@ function filterEntityOptions() {
   if (!dropdown.innerHTML) initEntityFilter();
   const q = (document.getElementById('f-entity-search').value||'').toLowerCase();
   dropdown.querySelectorAll('.entity-option').forEach(function(opt){
-    opt.style.display = (!q || opt.dataset.name.toLowerCase().includes(q)) ? '' : 'none';
+    opt.style.display = (!q || opt.dataset.name.toLowerCase().startsWith(q)) ? '' : 'none';
   });
   if (!dropdown.classList.contains('open')) dropdown.classList.add('open');
 }
@@ -2679,6 +2698,22 @@ function generateScanId(appVer, srvVer, userPrefix) {
   return 'WBT-' + user + '-' + date + '-' + av + '-' + sv + '-' + db + '-' + random;
 }
 
+async function renameCluster(clusterId, cardIndex) {
+  const input = document.getElementById('cluster-name-' + cardIndex);
+  if (!input) return;  const newName = input.value.trim();
+  if (!newName) { toast('Please enter a name.'); return; }
+  const serverUrl = getServerUrl();
+  if (!serverUrl) { toast('Server not configured.'); return; }
+  try {
+    const res = await fetch(serverUrl + '/clusters/rename', {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ clusterId, clusterName: newName })
+    });
+    if (!res.ok) throw new Error('Server error: ' + res.status);
+    toast('Cluster renamed ✓');
+  } catch(e) { toast('Rename failed: ' + e.message); }
+}
+
 function generateClusterId(srvVer) {
   const now = new Date();
   const date = now.getFullYear().toString() +
@@ -2690,10 +2725,10 @@ function generateClusterId(srvVer) {
   return 'WBT-CLU-' + date + '-' + av + '-' + sv + '-' + random;
 }
 
-async function saveClusterToServer(synthesis, postIds, isolatedPostIds, srvVer) {
+async function saveClusterToServer(synthesis, postIds, isolatedPostIds, srvVer, preGeneratedId) {
   const serverUrl = getServerUrl();
   if (!serverUrl) return;
-  const clusterId = generateClusterId(srvVer);
+  const clusterId = preGeneratedId || generateClusterId(srvVer);
   try {
     await fetch(serverUrl + '/clusters/save', {
       method: 'POST',
@@ -2820,22 +2855,47 @@ function openClusterFromHistory(idx) {
 
   // Synopsis card
   const color = CLUSTER_COLORS[0];
-  html += '<div class="card" style="margin-bottom:10px">';
-  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
-  html += '<span style="background:' + color.bg + ';color:' + color.text + ';border:1px solid ' + color.border + ';border-radius:99px;padding:2px 10px;font-size:10px;font-weight:700">' + escHtml(c.clusterName||'Cluster') + '</span>';
-  if (c.frame) html += '<span style="font-size:11px;color:var(--text3)">Frame: ' + escHtml(c.frame) + '</span>';
-  if (c.connectionType) html += '<span style="font-size:10px;color:var(--text3);margin-left:auto;font-style:italic">' + escHtml(c.connectionType) + '</span>';
+  html += '<div class="card" style="margin-bottom:10px;padding:12px 16px">';
+  // Cluster ID header
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">';
+  html += '<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-dim);border:1px solid rgba(26,107,255,.2);border-radius:6px;padding:3px 10px">' + escHtml(c.id) + '</span>';
+  const cDate = c.ts ? new Date(c.ts).toLocaleDateString() : '';
+  if (cDate) html += '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + cDate + '</span>';
   html += '</div>';
+  // Rename field
+  html += '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Cluster name</div>';
+  html += '<div style="display:flex;gap:8px;align-items:center">';
+  html += '<input type="text" class="filter-input" style="flex:1;font-size:13px;font-weight:600;color:var(--text)" id="cluster-name-hist" value="' + escHtml(c.clusterName||'') + '" />';
+  html += '<button class="btn btn-sm btn-primary" style="font-size:11px;white-space:nowrap" onclick="renameClusterHist(\'' + escHtml(c.id) + '\')">Save name</button>';
+  html += '</div></div>';
+  if (c.frame) html += '<div style="font-size:10px;color:var(--text3);margin-bottom:4px">Frame: <span style="color:var(--text2)">' + escHtml(c.frame) + '</span></div>';
+  if (c.connectionType) html += '<div style="font-size:10px;color:var(--text3);font-style:italic;margin-bottom:8px">' + escHtml(c.connectionType) + '</div>';
   html += '<p style="font-size:12px;line-height:1.75;color:var(--text2);margin-bottom:10px">' + escHtml(c.synopsis||'') + '</p>';
   html += '<div style="border-top:1px solid var(--border);padding-top:10px">';
   html += '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Technical details</div>';
   if (c.dominantEntity) html += '<div style="display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--border)"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;width:110px;flex-shrink:0;padding-top:1px">Who it serves</span><span style="font-size:12px;color:var(--text2)">' + escHtml(c.dominantEntity) + '</span></div>';
   if (c.connectionType) html += '<div style="display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--border)"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;width:110px;flex-shrink:0;padding-top:1px">Connection type</span><span style="font-size:12px;color:var(--text2)">' + escHtml(c.connectionType) + '</span></div>';
   if (c.event) html += '<div style="display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--border)"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;width:110px;flex-shrink:0;padding-top:1px">Event</span><span style="font-size:12px;color:var(--text2)">' + escHtml(c.event) + '</span></div>';
-  html += '<div style="font-size:10px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">Cluster ID: <span style="font-family:var(--mono)">' + escHtml(c.id) + '</span></div>';
   html += '</div></div>';
 
   resultsEl.innerHTML = html;
+}
+
+async function renameClusterHist(clusterId) {
+  const input = document.getElementById('cluster-name-hist');
+  if (!input) return;
+  const newName = input.value.trim();
+  if (!newName) { toast('Please enter a name.'); return; }
+  const serverUrl = getServerUrl();
+  if (!serverUrl) { toast('Server not configured.'); return; }
+  try {
+    const res = await fetch(serverUrl + '/clusters/rename', {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ clusterId, clusterName: newName })
+    });
+    if (!res.ok) throw new Error('Server error: ' + res.status);
+    toast('Cluster renamed ✓');
+  } catch(e) { toast('Rename failed: ' + e.message); }
 }
 
 // Migrate legacy localStorage entries to add missing fields
