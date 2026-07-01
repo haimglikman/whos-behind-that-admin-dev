@@ -1,3 +1,9 @@
+### v2.13.1 — bug fix (admin-dev) | Server: v1.19.1
+- Investigate basket: removed individual × remove buttons — use the reversible + Investigate button to add/remove instead
+- Timeline Y axis: entity labels reduced to font-size 9px, allowing more characters to fit cleanly
+- Legend: each post now shows a "↗ Go to post" link — both included and omitted posts
+- FAQ tab: seeded with all 32 existing FAQs from client, now loaded dynamically from server DB
+
 ### v2.13.0 (admin-dev) | Server: v1.19.0
 - Sidebar replaced with horizontal top nav bar — same style as client (Analyze left, Stats right)
 - New FAQ tab — fully editable: add, edit, delete FAQ items; stored on server DB; grouped by category
