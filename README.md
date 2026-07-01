@@ -1,3 +1,9 @@
+### v2.13.3 — bug fix (admin-dev) | Server: v1.19.1
+- Timeline: label column narrowed to 140px (from 180px) — more room for the timeline
+- Timeline: buffer between labels and first post reduced to 2px
+- Timeline: entity labels left-aligned from x=6, wrap to second line at ~18 chars
+- Timeline: no annotation lines in output
+
 ### v2.13.2 — bug fix (admin-dev) | Server: v1.19.1
 - Timeline: hard 180px label column — entity names left-aligned from x=6, wrap to second/third line if long
 - Timeline: 4px buffer between label column and first post (down from 12px)
