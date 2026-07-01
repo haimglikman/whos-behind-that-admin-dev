@@ -1,3 +1,10 @@
+### v2.13.2 — bug fix (admin-dev) | Server: v1.19.1
+- Timeline: hard 180px label column — entity names left-aligned from x=6, wrap to second/third line if long
+- Timeline: 4px buffer between label column and first post (down from 12px)
+- Timeline: posts start exactly at the first date position, no overlap with labels
+- Timeline: nodeR reduced from 18 to 15 — cleaner, less dominant circles
+- Timeline: lane height increased to 70px to accommodate wrapped 2-line entity labels
+
 ### v2.13.1 — bug fix (admin-dev) | Server: v1.19.1
 - Investigate basket: removed individual × remove buttons — use the reversible + Investigate button to add/remove instead
 - Timeline Y axis: entity labels reduced to font-size 9px, allowing more characters to fit cleanly
