@@ -246,7 +246,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.13.0</div>
+      <div class="version-badge" id="version-badge">v2.13.1</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -1301,7 +1301,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.13.0';
+const APP_VERSION = '2.13.1';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1711,7 +1711,6 @@ function renderBasket() {
     const excerpt = (e.postText||'').slice(0,180).replace(/</g,'&lt;');
     const tooltip = escHtml(topEntity) + ' · ' + (e.overallScore||0) + '%' + (e.postText ? '&#10;&#10;"' + excerpt + (e.postText.length > 180 ? '…' : '') + '"' : '');
     return '<div class="basket-item" style="position:relative" title="' + tooltip + '">' +
-      '<button class="basket-remove" onclick="removeFromInvestigation(\'' + escHtml(e.scanId) + '\')" title="Remove">×</button>' +
       '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">' + escHtml(e.scanId) + '</span>' +
       '<span style="font-size:11px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(e.url) + '</span>' +
       '<span style="font-size:10px;color:var(--text3);flex-shrink:0">' + escHtml(platform) + '</span>' +
@@ -1942,8 +1941,8 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     // Lane grid line
     svg += '<line x1="' + LABEL_W + '" y1="' + laneY + '" x2="' + (W-20) + '" y2="' + laneY + '" stroke="#e8f2fc" stroke-width="12"/>';
     // Entity label
-    const shortE = e.slice(0, 22) + (e.length > 22 ? '…' : '');
-    svg += '<text font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#475569" x="' + (LABEL_W - 8) + '" y="' + (laneY + 4) + '" text-anchor="end"><title>' + escHtml(e) + '</title>' + escHtml(shortE) + '</text>';
+    const shortE = e.slice(0, 26) + (e.length > 26 ? '…' : '');
+    svg += '<text font-family="Nunito,sans-serif" font-size="9" font-weight="600" fill="#64748b" x="' + (LABEL_W - 8) + '" y="' + (laneY + 4) + '" text-anchor="end"><title>' + escHtml(e) + '</title>' + escHtml(shortE) + '</text>';
   });
 
   // X axis
@@ -2040,20 +2039,21 @@ function renderInvestigateLegend(basket, clusters, isolated, postClusterMap) {
   const includedIds = clusters.flat();
   if (includedIds.length > 0) {
     html += '<div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Included</div>';
-    sorted.filter(function(p){ return includedIds.includes(p.scanId); }).forEach(function(p, i) {
+    sorted.filter(function(p){ return includedIds.includes(p.scanId); }).forEach(function(p) {
       const cis = postClusterMap[p.scanId] || [];
       const idx = sorted.indexOf(p) + 1;
       const color = cis.length > 0 ? CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length] : CLUSTER_COLORS[0];
       const d = p.ts ? new Date(p.ts) : null;
       const platform = p.platform === 'news' ? getDomainDisplayName(p.url) : (p.platform || '');
       html += '<div style="padding:7px 0;border-top:1px solid var(--border)">';
-      html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px">';
+      html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap">';
       html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:' + color.bg + ';border:1.5px solid ' + color.border + ';font-size:10px;font-weight:700;color:' + color.text + ';flex-shrink:0">P' + idx + '</span>';
       html += '<span style="font-weight:700;color:var(--text)">' + escHtml((p.topMatches||[])[0] || p.overallLabel || '') + '</span>';
       html += '<span style="font-family:var(--mono);font-size:11px;font-weight:700;color:' + color.text + ';background:' + color.bg + ';border:1px solid ' + color.border + ';border-radius:99px;padding:1px 8px">' + (p.overallScore||0) + '%</span>';
-      if (d) html += '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + d.toLocaleDateString() + '</span>';
+      if (d) html += '<span style="font-size:10px;color:var(--text3)">' + d.toLocaleDateString() + '</span>';
       if (platform) html += '<span style="font-size:10px;color:var(--text3)">' + escHtml(platform) + '</span>';
-      html += '<span style="font-family:var(--mono);font-size:9px;color:var(--text3)">' + escHtml(p.scanId) + '</span>';
+      html += '<span style="font-family:var(--mono);font-size:9px;color:var(--text3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.scanId) + '</span>';
+      if (p.url) html += '<a href="' + escHtml(p.url) + '" target="_blank" rel="noopener" style="font-size:10px;color:var(--blue);font-weight:700;white-space:nowrap;text-decoration:none;flex-shrink:0">↗ Go to post</a>';
       html += '</div>';
       if (p._summary) html += '<div style="font-size:11px;color:var(--text2);margin-top:3px;margin-left:30px;font-style:italic;line-height:1.5">' + escHtml(p._summary) + '</div>';
       html += '</div>';
@@ -2067,11 +2067,12 @@ function renderInvestigateLegend(basket, clusters, isolated, postClusterMap) {
       const idx = sorted.indexOf(p) + 1;
       const d = p.ts ? new Date(p.ts) : null;
       html += '<div style="padding:7px 0;border-top:1px solid var(--border)">';
-      html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px">';
+      html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap">';
       html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#f1efe8;border:1px solid #b4b2a9;font-size:10px;font-weight:700;color:#888780;flex-shrink:0">P' + idx + '</span>';
       html += '<span style="color:var(--text3)">' + escHtml((p.topMatches||[])[0] || p.overallLabel || '') + '</span>';
-      html += '<span style="font-size:10px;color:var(--text3);margin-left:auto;font-style:italic">No connection detected</span>';
+      html += '<span style="font-size:10px;color:var(--text3);font-style:italic">No connection detected</span>';
       if (d) html += '<span style="font-size:10px;color:var(--text3)">' + d.toLocaleDateString() + '</span>';
+      if (p.url) html += '<a href="' + escHtml(p.url) + '" target="_blank" rel="noopener" style="font-size:10px;color:var(--blue);font-weight:700;white-space:nowrap;text-decoration:none;margin-left:auto;flex-shrink:0">↗ Go to post</a>';
       html += '</div>';
       html += '</div>';
     });
