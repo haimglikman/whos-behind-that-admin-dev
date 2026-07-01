@@ -1,3 +1,11 @@
+### v2.13.0 (admin-dev) | Server: v1.19.0
+- Sidebar replaced with horizontal top nav bar — same style as client (Analyze left, Stats right)
+- New FAQ tab — fully editable: add, edit, delete FAQ items; stored on server DB; grouped by category
+- Timeline visualization: Y axis now shows entity lanes — posts sit at the height of their primary entity; secondary entity shown in brackets below the circle; no more label collisions
+- Bug fix: connection lines now preserved and restored when reopening a cluster from history
+- Bug fix: cluster history card now shows total post count including isolated posts
+- + Investigate button is now reversible — clicking again removes the post from the basket
+
 ### v2.12.4 — bug fix (admin-dev) | Server: v1.18.3 | Client: v1.14.4
 - Entity match: now filters by prefix (startsWith) not substring — typing "i" shows Iran and Itamar Ben Gvir, not all entities containing "i"
 - Timeline: entity name labels now clamp to frame edges — leftmost posts no longer escape the SVG boundary
