@@ -1,4 +1,11 @@
 ### v2.13.3 — bug fix (admin-dev) | Server: v1.19.1
+- Timeline: label column 160px, 2px buffer — timeline starts further left matching card edge
+- Timeline: secondary entity removed from below circles — shown in hover popup and legend instead
+- Timeline: hover popup on each circle — shows P number, primary entity + score, secondary entity (if exists), date, post summary; collapses on mouseout
+- Legend: secondary entity shown between primary entity and post summary (if exists)
+- Post history filters: app version and server version split into "starting from" / "up to" range fields with semver comparison
+
+### v2.13.3 — bug fix (admin-dev) | Server: v1.19.1
 - Timeline: label column narrowed to 140px (from 180px) — more room for the timeline
 - Timeline: buffer between labels and first post reduced to 2px
 - Timeline: entity labels left-aligned from x=6, wrap to second line at ~18 chars
