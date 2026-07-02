@@ -246,7 +246,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.13.3</div>
+      <div class="version-badge" id="version-badge">v2.13.4</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -459,12 +459,20 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
               </select>
             </div>
             <div class="filter-group">
-              <div class="filter-label">App version</div>
-              <input type="text" class="filter-input" id="f-app-version" placeholder="e.g. 2.2.0" oninput="applyFilters()" />
+              <div class="filter-label">App version — starting from</div>
+              <input type="text" class="filter-input" id="f-app-version" placeholder="e.g. 2.11.0" oninput="applyFilters()" />
             </div>
             <div class="filter-group">
-              <div class="filter-label">Server version</div>
-              <input type="text" class="filter-input" id="f-server-version" placeholder="e.g. 1.11.0" oninput="applyFilters()" />
+              <div class="filter-label">App version — up to</div>
+              <input type="text" class="filter-input" id="f-app-version-to" placeholder="e.g. 2.13.0" oninput="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Server version — starting from</div>
+              <input type="text" class="filter-input" id="f-server-version" placeholder="e.g. 1.17.0" oninput="applyFilters()" />
+            </div>
+            <div class="filter-group">
+              <div class="filter-label">Server version — up to</div>
+              <input type="text" class="filter-input" id="f-server-version-to" placeholder="e.g. 1.19.0" oninput="applyFilters()" />
             </div>
             <div class="filter-group">
               <div class="filter-label">Date from</div>
@@ -1301,7 +1309,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.13.3';
+const APP_VERSION = '2.13.4';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1881,7 +1889,9 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     if (!entityOrder.includes(e)) entityOrder.push(e);
   });
 
-  const LABEL_W = 140;
+  // LABEL_W: fixed label column. POST_START: where plot begins.
+  // Red line aligns with card inner-left — keep label area tight.
+  const LABEL_W = 160;
   const BUFFER = 2;
   const POST_START = LABEL_W + BUFFER;
   const W = 660;
@@ -1926,7 +1936,7 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
   }
 
   function wrapLabel(name) {
-    const MAX = 18;
+    const MAX = 20;
     if (name.length <= MAX) return [name];
     let breakAt = name.lastIndexOf(' ', MAX);
     if (breakAt < 2) breakAt = MAX;
@@ -1938,19 +1948,25 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     return [line1, rest.slice(0, breakAt2).trim(), rest.slice(breakAt2).trim()];
   }
 
-  let svg = '<div class="card" style="padding:12px 14px 8px;margin-bottom:10px;overflow:auto"><svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" role="img" style="overflow:visible;min-width:' + W + 'px"><title>Investigation timeline — Y axis: entities, X axis: time</title>';
+  // Unique timeline container ID for hover popup scoping
+  const uid = 'tl_' + Math.random().toString(36).slice(2,7);
+
+  let svg = '<div class="card" style="padding:12px 14px 8px;margin-bottom:10px;overflow:auto;position:relative">';
+
+  // Hover popup element (hidden by default)
+  svg += '<div id="' + uid + '_popup" style="display:none;position:absolute;background:#fff;border:1px solid #cfe0f5;border-radius:8px;padding:8px 10px;box-shadow:0 4px 16px rgba(15,39,68,.12);z-index:50;pointer-events:none;min-width:180px;max-width:240px">';
+  svg += '<div id="' + uid + '_popup_content" style="font-size:11px;line-height:1.6;color:#475569"></div>';
+  svg += '</div>';
+
+  svg += '<svg id="' + uid + '" width="100%" viewBox="0 0 ' + W + ' ' + H + '" role="img" style="overflow:visible;min-width:' + W + 'px"><title>Investigation timeline</title>';
 
   // Lane backgrounds and entity labels
   entityOrder.forEach(function(e, i) {
     const laneY = TOP_PAD + i * LANE_H;
     const laneCY = laneY + Math.floor(LANE_H / 2);
     const isNoEntity = e === NO_ENTITY;
-
     svg += '<rect x="0" y="' + laneY + '" width="' + W + '" height="' + LANE_H + '" fill="' + (isNoEntity ? '#f8f6f3' : '#eff6ff') + '" opacity="0.5"/>';
-
-    // Subtle separator line
     svg += '<line x1="' + LABEL_W + '" y1="' + laneY + '" x2="' + LABEL_W + '" y2="' + (laneY + LANE_H) + '" stroke="#deeaf8" stroke-width="0.5"/>';
-
     const lines = wrapLabel(e);
     const lineH = 11;
     const totalH = (lines.length - 1) * lineH;
@@ -1967,7 +1983,6 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
   // Date ticks
   const shownDates = new Set();
   let lastLabelX = -999;
-  const MIN_LABEL_GAP = 48;
   sorted.forEach(function(p) {
     const d = p.ts ? new Date(p.ts) : null;
     if (!d) return;
@@ -1976,7 +1991,7 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
       shownDates.add(dateKey);
       const baseX = POST_START + (d.getTime() - tMin) / tRange * DRAW_W;
       svg += '<line x1="' + baseX + '" y1="' + (AXIS_Y-3) + '" x2="' + baseX + '" y2="' + (AXIS_Y+3) + '" stroke="#cfe0f5" stroke-width="1"/>';
-      if (baseX - lastLabelX >= MIN_LABEL_GAP) {
+      if (baseX - lastLabelX >= 48) {
         svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#94a3b8" x="' + baseX + '" y="' + (AXIS_Y+14) + '" text-anchor="middle">' + dateKey + '</text>';
         lastLabelX = baseX;
       }
@@ -2009,14 +2024,28 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     svg += '<text font-family="Nunito,sans-serif" font-size="8" font-weight="700" fill="' + color.text + '" x="' + midX + '" y="' + (pillY+3) + '" text-anchor="middle" letter-spacing="0.4">CLUSTER ' + color.label + '</text>';
   });
 
-  // Post nodes
+  // Post nodes — no secondary entity below circle; hover popup instead
   sorted.forEach(function(p) {
     const x = xOf(p), y = yOf(p.scanId);
     const cis = postClusterMap[p.scanId] || [];
     const isIsolated = cis.length === 0;
     const isMulti = cis.length > 1;
     const idx = sorted.indexOf(p) + 1;
-    const secondaryEntity = (p.topMatches||[])[1] || '';
+    const primary = (p.topMatches||[])[0] || NO_ENTITY;
+    const secondary = (p.topMatches||[])[1] || '';
+    const d = p.ts ? new Date(p.ts) : null;
+    const dateStr = d ? d.toLocaleDateString() : '';
+    const summary = (p._summary || '').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+    const secEscaped = secondary.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+
+    // Build popup HTML string (escaped for onmouseover)
+    let popupHtml = '<div style="font-weight:700;color:#1e293b;margin-bottom:4px">P' + idx + '</div>';
+    popupHtml += '<div style="color:#475569"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Primary</span><br>' + primary.replace(/'/g,'&#39;') + ' &bull; ' + (p.overallScore||0) + '%</div>';
+    if (secondary) popupHtml += '<div style="color:#475569;margin-top:3px"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Secondary</span><br>' + secEscaped + '</div>';
+    if (dateStr) popupHtml += '<div style="color:#94a3b8;margin-top:3px;font-size:10px">' + dateStr + '</div>';
+    if (summary) popupHtml += '<div style="color:#475569;margin-top:4px;font-style:italic;font-size:10px">' + summary.replace(/'/g,'&#39;') + '</div>';
+
+    const popupAttr = popupHtml.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
 
     if (isMulti) {
       const c0 = CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length];
@@ -2034,12 +2063,15 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     }
 
     const textColor = isMulti ? '#1e293b' : isIsolated ? '#888780' : CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length].text;
-    svg += '<text font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="' + textColor + '" x="' + x + '" y="' + (y-3) + '" text-anchor="middle">P' + idx + '</text>';
-    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="' + textColor + '" x="' + x + '" y="' + (y+9) + '" text-anchor="middle">' + (p.overallScore||0) + '%</text>';
-    if (secondaryEntity) {
-      const secShort = secondaryEntity.slice(0, 14) + (secondaryEntity.length > 14 ? '…' : '');
-      svg += '<text font-family="Nunito,sans-serif" font-size="8" fill="#94a3b8" x="' + x + '" y="' + (y+nodeR+11) + '" text-anchor="middle">(' + escHtml(secShort) + ')</text>';
-    }
+
+    // Invisible hover target over the circle
+    svg += '<circle cx="' + x + '" cy="' + y + '" r="' + nodeR + '" fill="transparent" style="cursor:pointer"' +
+      ' onmouseenter="(function(e){var p=document.getElementById(\'' + uid + '_popup\');var c=document.getElementById(\'' + uid + '_popup_content\');if(!p||!c)return;c.innerHTML=\'' + popupAttr.replace(/'/g,"\\'") + '\';var rect=document.getElementById(\'' + uid + '\').closest(\'.card\').getBoundingClientRect();p.style.display=\'block\';p.style.left=(e.clientX-rect.left+10)+\'px\';p.style.top=(e.clientY-rect.top-20)+\'px\';})(event)"' +
+      ' onmouseleave="(function(){var p=document.getElementById(\'' + uid + '_popup\');if(p)p.style.display=\'none\';})()"' +
+    '/>';
+
+    svg += '<text font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="' + textColor + '" x="' + x + '" y="' + (y-3) + '" text-anchor="middle" style="pointer-events:none">P' + idx + '</text>';
+    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="' + textColor + '" x="' + x + '" y="' + (y+9) + '" text-anchor="middle" style="pointer-events:none">' + (p.overallScore||0) + '%</text>';
   });
 
   svg += '</svg></div>';
@@ -2070,6 +2102,8 @@ function renderInvestigateLegend(basket, clusters, isolated, postClusterMap) {
       html += '<span style="font-family:var(--mono);font-size:9px;color:var(--text3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.scanId) + '</span>';
       if (p.url) html += '<a href="' + escHtml(p.url) + '" target="_blank" rel="noopener" style="font-size:10px;color:var(--blue);font-weight:700;white-space:nowrap;text-decoration:none;flex-shrink:0">↗ Go to post</a>';
       html += '</div>';
+      const secondary = (p.topMatches||[])[1] || '';
+      if (secondary) html += '<div style="font-size:11px;color:var(--text3);margin-top:2px;margin-left:30px">Secondary: <span style="color:var(--text2)">' + escHtml(secondary) + '</span></div>';
       if (p._summary) html += '<div style="font-size:11px;color:var(--text2);margin-top:3px;margin-left:30px;font-style:italic;line-height:1.5">' + escHtml(p._summary) + '</div>';
       html += '</div>';
     });
@@ -2336,8 +2370,21 @@ function applyFilters() {
   // platform can be: '' | 'x' | 'instagram' | 'facebook' | 'news' | 'news:domain.com'
   const platformBase = platform.startsWith('news:') ? 'news' : platform;
   const newsSiteFilter = platform.startsWith('news:') ? platform.slice(5) : '';
-  const appVersion = document.getElementById('f-app-version').value.trim();
-  const serverVersion = document.getElementById('f-server-version').value.trim();
+  const appVersionFrom = document.getElementById('f-app-version').value.trim();
+  const appVersionTo = (document.getElementById('f-app-version-to')||{value:''}).value.trim();
+  const serverVersionFrom = document.getElementById('f-server-version').value.trim();
+  const serverVersionTo = (document.getElementById('f-server-version-to')||{value:''}).value.trim();
+
+  // Semver comparison helper
+  function parseVer(v) {
+    const p = (v||'').split('.').map(Number);
+    return [p[0]||0, p[1]||0, p[2]||0];
+  }
+  function cmpVer(a, b) {
+    const av = parseVer(a), bv = parseVer(b);
+    for (let i = 0; i < 3; i++) { if (av[i] !== bv[i]) return av[i] - bv[i]; }
+    return 0;
+  }
   const dateFrom = document.getElementById('f-date-from').value;
   const dateTo = document.getElementById('f-date-to').value;
   const minScore = parseInt(document.getElementById('f-min-score').value) || 0;
@@ -2375,8 +2422,10 @@ function applyFilters() {
     if (urlFilter && !(e.url||'').toLowerCase().includes(urlFilter)) return false;
     if (platformBase && e.platform && e.platform !== platformBase) return false;
     if (platformBase && !e.platform) { if (detectPlatformClient(e.url||'') !== platformBase) return false; }
-    if (appVersion && !(e.appVersion||'').includes(appVersion)) return false;
-    if (serverVersion && !(e.serverVersion||'').includes(serverVersion)) return false;
+    if (appVersionFrom && cmpVer(e.appVersion||'0.0.0', appVersionFrom) < 0) return false;
+    if (appVersionTo && cmpVer(e.appVersion||'0.0.0', appVersionTo) > 0) return false;
+    if (serverVersionFrom && cmpVer(e.serverVersion||'0.0.0', serverVersionFrom) < 0) return false;
+    if (serverVersionTo && cmpVer(e.serverVersion||'0.0.0', serverVersionTo) > 0) return false;
     if (selectedEntities.length > 0) {
       const names = selectedEntities.map(function(se){ return se.name.toLowerCase(); });
       const inTop = (e.topMatches||[]).some(function(m){ return names.includes(m.toLowerCase()); });
@@ -2409,7 +2458,7 @@ function applyFilters() {
 
 function clearFilters() {
   ['f-platform','f-alignment','f-has-comment','f-source','f-user'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
-  ['f-app-version','f-server-version','f-scan-id','f-url','f-date-from','f-date-to','f-min-score','f-min-ai','f-actor'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-app-version','f-app-version-to','f-server-version','f-server-version-to','f-scan-id','f-url','f-date-from','f-date-to','f-min-score','f-min-ai','f-actor'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
   selectedEntities=[];
   renderEntityTags();
   applyFilters();
