@@ -1,3 +1,13 @@
+### v2.13.5 — bug fix (admin-dev) | Server: v1.19.1
+- Timeline: rebuilt hover popup using clean global functions (wbtShowTlPopup/wbtHideTlPopup) — no more inline quote-escaping that was breaking the SVG
+- Timeline: popup shows P number, primary entity + score, secondary entity (if exists), date, post summary — each on its own line, collapses on mouseout
+- Timeline: secondary entity removed from below circles
+- Timeline: label column 160px, 2px buffer, labels wrap at ~20 chars
+- Post history: version filters split into "starting from" / "up to" with semver range comparison
+- based on 2.13.3
+
+- **v2.13.4 was reverted**
+
 ### v2.13.3 — bug fix (admin-dev) | Server: v1.19.1
 - Timeline: label column 160px, 2px buffer — timeline starts further left matching card edge
 - Timeline: secondary entity removed from below circles — shown in hover popup and legend instead
