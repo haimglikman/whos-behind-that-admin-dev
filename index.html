@@ -246,7 +246,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.13.4</div>
+      <div class="version-badge" id="version-badge">v2.13.5</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -1309,7 +1309,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.13.4';
+const APP_VERSION = '2.13.5';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1889,16 +1889,8 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     if (!entityOrder.includes(e)) entityOrder.push(e);
   });
 
-  // LABEL_W: fixed label column. POST_START: where plot begins.
-  // Red line aligns with card inner-left — keep label area tight.
-  const LABEL_W = 160;
-  const BUFFER = 2;
-  const POST_START = LABEL_W + BUFFER;
-  const W = 660;
-  const nodeR = 18;
-  const LANE_H = 70;
-  const TOP_PAD = 36;
-  const BOTTOM_PAD = 46;
+  const LABEL_W = 160, BUFFER = 2, POST_START = LABEL_W + BUFFER;
+  const W = 660, nodeR = 18, LANE_H = 70, TOP_PAD = 36, BOTTOM_PAD = 46;
   const H = TOP_PAD + entityOrder.length * LANE_H + BOTTOM_PAD;
   const AXIS_Y = H - BOTTOM_PAD + 10;
   const DRAW_W = W - POST_START - 16;
@@ -1910,8 +1902,7 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
   const laneGroups = {};
   sorted.forEach(function(p) {
     const e = (p.topMatches||[])[0] || NO_ENTITY;
-    const d = p.ts ? new Date(p.ts) : new Date(0);
-    const key = e + '|' + d.toLocaleDateString('en-GB');
+    const key = e + '|' + (p.ts ? new Date(p.ts).toLocaleDateString('en-GB') : '');
     if (!laneGroups[key]) laneGroups[key] = [];
     laneGroups[key].push(p.scanId);
   });
@@ -1923,57 +1914,59 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
     const group = laneGroups[key] || [];
     const idx = group.indexOf(p.scanId);
     const baseX = POST_START + (d.getTime() - tMin) / tRange * DRAW_W;
-    const offset = group.length > 1 ? (idx - (group.length-1)/2) * (nodeR*2 + 4) : 0;
-    return Math.max(POST_START + nodeR, Math.min(W - 16 - nodeR, baseX + offset));
+    const offset = group.length > 1 ? (idx - (group.length-1)/2) * (nodeR*2+4) : 0;
+    return Math.max(POST_START+nodeR, Math.min(W-16-nodeR, baseX+offset));
   }
 
   function yOf(scanId) {
-    const p = sorted.find(function(q){ return q.scanId === scanId; });
+    const p = sorted.find(function(q){ return q.scanId===scanId; });
     if (!p) return TOP_PAD + nodeR;
     const e = (p.topMatches||[])[0] || NO_ENTITY;
-    const laneIdx = entityOrder.indexOf(e);
-    return TOP_PAD + laneIdx * LANE_H + Math.floor(LANE_H / 2);
+    return TOP_PAD + entityOrder.indexOf(e) * LANE_H + Math.floor(LANE_H/2);
   }
 
   function wrapLabel(name) {
     const MAX = 20;
     if (name.length <= MAX) return [name];
-    let breakAt = name.lastIndexOf(' ', MAX);
-    if (breakAt < 2) breakAt = MAX;
-    const line1 = name.slice(0, breakAt).trim();
-    const rest = name.slice(breakAt).trim();
-    if (rest.length <= MAX) return [line1, rest];
-    let breakAt2 = rest.lastIndexOf(' ', MAX);
-    if (breakAt2 < 2) breakAt2 = MAX;
-    return [line1, rest.slice(0, breakAt2).trim(), rest.slice(breakAt2).trim()];
+    let b = name.lastIndexOf(' ', MAX); if (b<2) b=MAX;
+    const l1 = name.slice(0,b).trim(), rest = name.slice(b).trim();
+    if (rest.length <= MAX) return [l1, rest];
+    let b2 = rest.lastIndexOf(' ', MAX); if (b2<2) b2=MAX;
+    return [l1, rest.slice(0,b2).trim(), rest.slice(b2).trim()];
   }
 
-  // Unique timeline container ID for hover popup scoping
-  const uid = 'tl_' + Math.random().toString(36).slice(2,7);
+  // Store popup data in a global keyed by uid so inline handlers stay simple
+  const uid = 'tl' + Math.random().toString(36).slice(2,6);
+  window._wbtTl = window._wbtTl || {};
+  window._wbtTl[uid] = sorted.map(function(p, idx) {
+    const d = p.ts ? new Date(p.ts) : null;
+    return {
+      label: 'P' + (idx+1),
+      primary: (p.topMatches||[])[0] || NO_ENTITY,
+      score: (p.overallScore||0),
+      secondary: (p.topMatches||[])[1] || '',
+      date: d ? d.toLocaleDateString() : '',
+      summary: p._summary || ''
+    };
+  });
 
-  let svg = '<div class="card" style="padding:12px 14px 8px;margin-bottom:10px;overflow:auto;position:relative">';
+  let out = '<div class="card" style="padding:12px 14px 8px;margin-bottom:10px;overflow:auto;position:relative" id="' + uid + '_card">';
+  out += '<div id="' + uid + '_pop" style="display:none;position:absolute;background:#fff;border:1px solid #cfe0f5;border-radius:8px;padding:8px 10px;box-shadow:0 4px 16px rgba(15,39,68,.12);z-index:100;pointer-events:none;min-width:170px;max-width:230px;font-family:Nunito,sans-serif"></div>';
 
-  // Hover popup element (hidden by default)
-  svg += '<div id="' + uid + '_popup" style="display:none;position:absolute;background:#fff;border:1px solid #cfe0f5;border-radius:8px;padding:8px 10px;box-shadow:0 4px 16px rgba(15,39,68,.12);z-index:50;pointer-events:none;min-width:180px;max-width:240px">';
-  svg += '<div id="' + uid + '_popup_content" style="font-size:11px;line-height:1.6;color:#475569"></div>';
-  svg += '</div>';
+  let svg = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="overflow:visible;min-width:' + W + 'px">';
 
-  svg += '<svg id="' + uid + '" width="100%" viewBox="0 0 ' + W + ' ' + H + '" role="img" style="overflow:visible;min-width:' + W + 'px"><title>Investigation timeline</title>';
-
-  // Lane backgrounds and entity labels
+  // Lane backgrounds + entity labels
   entityOrder.forEach(function(e, i) {
     const laneY = TOP_PAD + i * LANE_H;
-    const laneCY = laneY + Math.floor(LANE_H / 2);
-    const isNoEntity = e === NO_ENTITY;
-    svg += '<rect x="0" y="' + laneY + '" width="' + W + '" height="' + LANE_H + '" fill="' + (isNoEntity ? '#f8f6f3' : '#eff6ff') + '" opacity="0.5"/>';
-    svg += '<line x1="' + LABEL_W + '" y1="' + laneY + '" x2="' + LABEL_W + '" y2="' + (laneY + LANE_H) + '" stroke="#deeaf8" stroke-width="0.5"/>';
+    const laneCY = laneY + Math.floor(LANE_H/2);
+    const isNone = e === NO_ENTITY;
+    svg += '<rect x="0" y="' + laneY + '" width="' + W + '" height="' + LANE_H + '" fill="' + (isNone?'#f8f6f3':'#eff6ff') + '" opacity="0.5"/>';
+    svg += '<line x1="' + LABEL_W + '" y1="' + laneY + '" x2="' + LABEL_W + '" y2="' + (laneY+LANE_H) + '" stroke="#deeaf8" stroke-width="0.5"/>';
     const lines = wrapLabel(e);
-    const lineH = 11;
-    const totalH = (lines.length - 1) * lineH;
-    const startY = laneCY - totalH / 2;
-    const fillColor = isNoEntity ? '#94a3b8' : '#475569';
+    const lineH = 11, totalH = (lines.length-1)*lineH;
+    const startY = laneCY - totalH/2;
     lines.forEach(function(line, li) {
-      svg += '<text font-family="Nunito,sans-serif" font-size="9" font-weight="600" fill="' + fillColor + '" x="6" y="' + (startY + li * lineH) + '">' + escHtml(line) + '</text>';
+      svg += '<text font-family="Nunito,sans-serif" font-size="9" font-weight="600" fill="' + (isNone?'#94a3b8':'#475569') + '" x="6" y="' + (startY+li*lineH) + '">' + escHtml(line) + '</text>';
     });
   });
 
@@ -1981,101 +1974,73 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
   svg += '<line x1="' + POST_START + '" y1="' + AXIS_Y + '" x2="' + (W-8) + '" y2="' + AXIS_Y + '" stroke="#cfe0f5" stroke-width="1"/>';
 
   // Date ticks
-  const shownDates = new Set();
-  let lastLabelX = -999;
+  const shownDates = new Set(); let lastLX = -999;
   sorted.forEach(function(p) {
-    const d = p.ts ? new Date(p.ts) : null;
-    if (!d) return;
-    const dateKey = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-    if (!shownDates.has(dateKey)) {
-      shownDates.add(dateKey);
-      const baseX = POST_START + (d.getTime() - tMin) / tRange * DRAW_W;
-      svg += '<line x1="' + baseX + '" y1="' + (AXIS_Y-3) + '" x2="' + baseX + '" y2="' + (AXIS_Y+3) + '" stroke="#cfe0f5" stroke-width="1"/>';
-      if (baseX - lastLabelX >= 48) {
-        svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#94a3b8" x="' + baseX + '" y="' + (AXIS_Y+14) + '" text-anchor="middle">' + dateKey + '</text>';
-        lastLabelX = baseX;
+    const d = p.ts ? new Date(p.ts) : null; if (!d) return;
+    const dk = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    if (!shownDates.has(dk)) {
+      shownDates.add(dk);
+      const bx = POST_START + (d.getTime()-tMin)/tRange*DRAW_W;
+      svg += '<line x1="' + bx + '" y1="' + (AXIS_Y-3) + '" x2="' + bx + '" y2="' + (AXIS_Y+3) + '" stroke="#cfe0f5" stroke-width="1"/>';
+      if (bx-lastLX >= 48) {
+        svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="#94a3b8" x="' + bx + '" y="' + (AXIS_Y+14) + '" text-anchor="middle">' + dk + '</text>';
+        lastLX = bx;
       }
     }
   });
 
   // Connection arcs
   connections.forEach(function(conn) {
-    const pa = sorted.find(function(p){ return p.scanId === conn.postA; });
-    const pb = sorted.find(function(p){ return p.scanId === conn.postB; });
-    if (!pa || !pb) return;
-    const x1 = xOf(pa), x2 = xOf(pb);
-    const y1 = yOf(conn.postA), y2 = yOf(conn.postB);
-    const cis = postClusterMap[conn.postA] || [];
-    const color = cis.length > 0 ? CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length].border : '#cfe0f5';
-    const cx = (x1+x2)/2, cy = Math.min(y1,y2) - 18;
-    svg += '<path d="M' + x1 + ' ' + y1 + ' Q ' + cx + ' ' + cy + ' ' + x2 + ' ' + y2 + '" fill="none" stroke="' + color + '" stroke-width="1.4" stroke-dasharray="5 4"/>';
+    const pa = sorted.find(function(p){ return p.scanId===conn.postA; });
+    const pb = sorted.find(function(p){ return p.scanId===conn.postB; });
+    if (!pa||!pb) return;
+    const x1=xOf(pa), x2=xOf(pb), y1=yOf(conn.postA), y2=yOf(conn.postB);
+    const cis = postClusterMap[conn.postA]||[];
+    const col = cis.length>0 ? CLUSTER_COLORS[cis[0]%CLUSTER_COLORS.length].border : '#cfe0f5';
+    svg += '<path d="M'+x1+' '+y1+' Q '+((x1+x2)/2)+' '+(Math.min(y1,y2)-18)+' '+x2+' '+y2+'" fill="none" stroke="'+col+'" stroke-width="1.4" stroke-dasharray="5 4"/>';
   });
 
-  // Cluster label pills
+  // Cluster pills
   clusters.forEach(function(cluster, ci) {
-    const color = CLUSTER_COLORS[ci % CLUSTER_COLORS.length];
-    const clusterPs = cluster.map(function(id){ return sorted.find(function(p){ return p.scanId === id; }); }).filter(Boolean);
-    if (clusterPs.length < 2) return;
-    const xs = clusterPs.map(xOf);
-    const midX = (Math.min.apply(null,xs) + Math.max.apply(null,xs)) / 2;
-    const minY = Math.min.apply(null, cluster.map(yOf));
-    const pillY = Math.max(12, minY - 22);
-    svg += '<rect x="' + (midX-28) + '" y="' + (pillY-7) + '" width="56" height="14" rx="7" fill="' + color.bg + '" stroke="' + color.border + '" stroke-width="0.5"/>';
-    svg += '<text font-family="Nunito,sans-serif" font-size="8" font-weight="700" fill="' + color.text + '" x="' + midX + '" y="' + (pillY+3) + '" text-anchor="middle" letter-spacing="0.4">CLUSTER ' + color.label + '</text>';
+    const col = CLUSTER_COLORS[ci%CLUSTER_COLORS.length];
+    const pts = cluster.map(function(id){ return sorted.find(function(p){ return p.scanId===id; }); }).filter(Boolean);
+    if (pts.length<2) return;
+    const xs=pts.map(xOf), midX=(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2;
+    const minY=Math.min.apply(null,cluster.map(yOf)), pillY=Math.max(12,minY-22);
+    svg += '<rect x="'+(midX-28)+'" y="'+(pillY-7)+'" width="56" height="14" rx="7" fill="'+col.bg+'" stroke="'+col.border+'" stroke-width="0.5"/>';
+    svg += '<text font-family="Nunito,sans-serif" font-size="8" font-weight="700" fill="'+col.text+'" x="'+midX+'" y="'+(pillY+3)+'" text-anchor="middle" letter-spacing="0.4">CLUSTER '+col.label+'</text>';
   });
 
-  // Post nodes — no secondary entity below circle; hover popup instead
-  sorted.forEach(function(p) {
-    const x = xOf(p), y = yOf(p.scanId);
-    const cis = postClusterMap[p.scanId] || [];
-    const isIsolated = cis.length === 0;
-    const isMulti = cis.length > 1;
-    const idx = sorted.indexOf(p) + 1;
-    const primary = (p.topMatches||[])[0] || NO_ENTITY;
-    const secondary = (p.topMatches||[])[1] || '';
-    const d = p.ts ? new Date(p.ts) : null;
-    const dateStr = d ? d.toLocaleDateString() : '';
-    const summary = (p._summary || '').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
-    const secEscaped = secondary.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
-
-    // Build popup HTML string (escaped for onmouseover)
-    let popupHtml = '<div style="font-weight:700;color:#1e293b;margin-bottom:4px">P' + idx + '</div>';
-    popupHtml += '<div style="color:#475569"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Primary</span><br>' + primary.replace(/'/g,'&#39;') + ' &bull; ' + (p.overallScore||0) + '%</div>';
-    if (secondary) popupHtml += '<div style="color:#475569;margin-top:3px"><span style="font-weight:600;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Secondary</span><br>' + secEscaped + '</div>';
-    if (dateStr) popupHtml += '<div style="color:#94a3b8;margin-top:3px;font-size:10px">' + dateStr + '</div>';
-    if (summary) popupHtml += '<div style="color:#475569;margin-top:4px;font-style:italic;font-size:10px">' + summary.replace(/'/g,'&#39;') + '</div>';
-
-    const popupAttr = popupHtml.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+  // Post nodes
+  sorted.forEach(function(p, pidx) {
+    const x=xOf(p), y=yOf(p.scanId);
+    const cis=postClusterMap[p.scanId]||[];
+    const isIso=cis.length===0, isMulti=cis.length>1;
+    const num=pidx+1;
 
     if (isMulti) {
-      const c0 = CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length];
-      const c1 = CLUSTER_COLORS[cis[1] % CLUSTER_COLORS.length];
-      svg += '<path d="M' + x + ' ' + (y-nodeR) + ' A ' + nodeR + ' ' + nodeR + ' 0 0 1 ' + x + ' ' + (y+nodeR) + '" fill="none" stroke="' + c1.border + '" stroke-width="5"/>';
-      svg += '<path d="M' + x + ' ' + (y-nodeR) + ' A ' + nodeR + ' ' + nodeR + ' 0 0 0 ' + x + ' ' + (y+nodeR) + '" fill="none" stroke="' + c0.border + '" stroke-width="5"/>';
-      svg += '<circle cx="' + x + '" cy="' + y + '" r="' + (nodeR-4) + '" fill="white"/>';
-      svg += '<rect x="' + (x-22) + '" y="' + (y-nodeR-14) + '" width="44" height="12" rx="6" fill="#1e293b"/>';
-      svg += '<text font-family="Nunito,sans-serif" font-size="7" font-weight="700" fill="#fff" x="' + x + '" y="' + (y-nodeR-5) + '" text-anchor="middle">2 clusters</text>';
-    } else if (isIsolated) {
-      svg += '<circle cx="' + x + '" cy="' + y + '" r="' + nodeR + '" fill="#f1efe8" stroke="#b4b2a9" stroke-width="1"/>';
+      const c0=CLUSTER_COLORS[cis[0]%CLUSTER_COLORS.length], c1=CLUSTER_COLORS[cis[1]%CLUSTER_COLORS.length];
+      svg += '<path d="M'+x+' '+(y-nodeR)+' A '+nodeR+' '+nodeR+' 0 0 1 '+x+' '+(y+nodeR)+'" fill="none" stroke="'+c1.border+'" stroke-width="5"/>';
+      svg += '<path d="M'+x+' '+(y-nodeR)+' A '+nodeR+' '+nodeR+' 0 0 0 '+x+' '+(y+nodeR)+'" fill="none" stroke="'+c0.border+'" stroke-width="5"/>';
+      svg += '<circle cx="'+x+'" cy="'+y+'" r="'+(nodeR-4)+'" fill="white"/>';
+    } else if (isIso) {
+      svg += '<circle cx="'+x+'" cy="'+y+'" r="'+nodeR+'" fill="#f1efe8" stroke="#b4b2a9" stroke-width="1"/>';
     } else {
-      const color = CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length];
-      svg += '<circle cx="' + x + '" cy="' + y + '" r="' + nodeR + '" fill="' + color.bg + '" stroke="' + color.border + '" stroke-width="1.5"/>';
+      const col=CLUSTER_COLORS[cis[0]%CLUSTER_COLORS.length];
+      svg += '<circle cx="'+x+'" cy="'+y+'" r="'+nodeR+'" fill="'+col.bg+'" stroke="'+col.border+'" stroke-width="1.5"/>';
     }
 
-    const textColor = isMulti ? '#1e293b' : isIsolated ? '#888780' : CLUSTER_COLORS[cis[0] % CLUSTER_COLORS.length].text;
+    const tc = isMulti?'#1e293b' : isIso?'#888780' : CLUSTER_COLORS[cis[0]%CLUSTER_COLORS.length].text;
+    svg += '<text font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="'+tc+'" x="'+x+'" y="'+(y-3)+'" text-anchor="middle" style="pointer-events:none">P'+num+'</text>';
+    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="'+tc+'" x="'+x+'" y="'+(y+9)+'" text-anchor="middle" style="pointer-events:none">'+(p.overallScore||0)+'%</text>';
 
-    // Invisible hover target over the circle
-    svg += '<circle cx="' + x + '" cy="' + y + '" r="' + nodeR + '" fill="transparent" style="cursor:pointer"' +
-      ' onmouseenter="(function(e){var p=document.getElementById(\'' + uid + '_popup\');var c=document.getElementById(\'' + uid + '_popup_content\');if(!p||!c)return;c.innerHTML=\'' + popupAttr.replace(/'/g,"\\'") + '\';var rect=document.getElementById(\'' + uid + '\').closest(\'.card\').getBoundingClientRect();p.style.display=\'block\';p.style.left=(e.clientX-rect.left+10)+\'px\';p.style.top=(e.clientY-rect.top-20)+\'px\';})(event)"' +
-      ' onmouseleave="(function(){var p=document.getElementById(\'' + uid + '_popup\');if(p)p.style.display=\'none\';})()"' +
-    '/>';
-
-    svg += '<text font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="' + textColor + '" x="' + x + '" y="' + (y-3) + '" text-anchor="middle" style="pointer-events:none">P' + idx + '</text>';
-    svg += '<text font-family="Nunito,sans-serif" font-size="9" fill="' + textColor + '" x="' + x + '" y="' + (y+9) + '" text-anchor="middle" style="pointer-events:none">' + (p.overallScore||0) + '%</text>';
+    // Clean hover target — just calls a global function with uid + index
+    svg += '<circle cx="'+x+'" cy="'+y+'" r="'+nodeR+'" fill="transparent" style="cursor:pointer" onmouseenter="wbtShowTlPopup(event,&quot;'+uid+'&quot;,'+pidx+')" onmouseleave="wbtHideTlPopup(&quot;'+uid+'&quot;)" />';
   });
 
-  svg += '</svg></div>';
-  return svg;
+  svg += '</svg>';
+  out += svg + '</div>';
+  return out;
 }
 function renderInvestigateLegend(basket, clusters, isolated, postClusterMap) {
   const sorted = basket.slice().sort(function(a,b){ return new Date(a.ts||0) - new Date(b.ts||0); });
@@ -2819,6 +2784,33 @@ async function checkConvergentInterest(d) {
 // ─────────────────────────────────────────────
 
 // Generate scan ID: WBT-{USER}-{date}-{appVer}-{srvVer}-{random}
+function wbtShowTlPopup(event, uid, idx) {
+  const data = (window._wbtTl||{})[uid];
+  if (!data) return;
+  const d = data[idx]; if (!d) return;
+  const pop = document.getElementById(uid+'_pop');
+  const card = document.getElementById(uid+'_card');
+  if (!pop||!card) return;
+  let html = '<div style="font-weight:700;color:#1e293b;font-size:12px;margin-bottom:5px">'+escHtml(d.label)+'</div>';
+  html += '<div style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Primary</div>';
+  html += '<div style="font-size:11px;color:#1e293b;margin-bottom:4px">'+escHtml(d.primary)+' &bull; '+d.score+'%</div>';
+  if (d.secondary) {
+    html += '<div style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Secondary</div>';
+    html += '<div style="font-size:11px;color:#475569;margin-bottom:4px">'+escHtml(d.secondary)+'</div>';
+  }
+  if (d.date) html += '<div style="font-size:10px;color:#94a3b8;margin-bottom:4px">'+escHtml(d.date)+'</div>';
+  if (d.summary) html += '<div style="font-size:10px;color:#475569;font-style:italic;line-height:1.5">'+escHtml(d.summary)+'</div>';
+  pop.innerHTML = html;
+  const rect = card.getBoundingClientRect();
+  pop.style.left = (event.clientX - rect.left + 12) + 'px';
+  pop.style.top = (event.clientY - rect.top - 10) + 'px';
+  pop.style.display = 'block';
+}
+function wbtHideTlPopup(uid) {
+  const pop = document.getElementById(uid+'_pop');
+  if (pop) pop.style.display = 'none';
+}
+
 function generateScanId(appVer, srvVer, userPrefix) {
   const now = new Date();
   const date = now.getFullYear().toString() +
