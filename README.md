@@ -1,3 +1,6 @@
+### v2.13.8 — bug fix (admin-dev) | Server: v1.19.1
+- Fixed "clearInvestigationBasket is not defined" error when running investigation
+
 ### v2.13.7 (admin-dev) | Server: v1.19.1
 - Post history: app/server version filters are now dropdowns populated from actual versions in history — only versions with real data appear
 - Post history: blank version filter = no limit on that side (from/up to work independently)
