@@ -1,3 +1,10 @@
+### v2.13.6 (admin-dev) | Server: v1.19.1
+- Timeline: label column reduced to 120px — timeline now starts at ~18% of SVG width
+- Timeline: entity label font reduced to 8px, wrap at 16 chars — cleaner and less wide
+- Timeline: hover popup now flips left when near the right edge of the screen
+- Post history: version filter labels shortened to "App version — from" / "up to"
+- Investigate: pending banner auto-clears after running investigation
+
 ### v2.13.5 — bug fix (admin-dev) | Server: v1.19.1
 - Timeline: rebuilt hover popup using clean global functions (wbtShowTlPopup/wbtHideTlPopup) — no more inline quote-escaping that was breaking the SVG
 - Timeline: popup shows P number, primary entity + score, secondary entity (if exists), date, post summary — each on its own line, collapses on mouseout
@@ -5,7 +12,7 @@
 - Timeline: label column 160px, 2px buffer, labels wrap at ~20 chars
 - Post history: version filters split into "starting from" / "up to" with semver range comparison
 
-### v2.13.4 — bug fix (admin-dev) | Server: v1.19.1 - BAD VERSION!!!
+### v2.13.4 — bug fix (admin-dev) | Server: v1.19.1 - BAD VERSION, REVERTED!!! 2.13.5 was based on 2.13.3
 - Timeline: label column 160px, 2px buffer — timeline starts further left matching card edge
 - Timeline: secondary entity removed from below circles — shown in hover popup and legend instead
 - Timeline: hover popup on each circle — shows P number, primary entity + score, secondary entity (if exists), date, post summary; collapses on mouseout
