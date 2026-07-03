@@ -1,3 +1,12 @@
+### v2.13.7 (admin-dev) | Server: v1.19.1
+- Post history: app/server version filters are now dropdowns populated from actual versions in history — only versions with real data appear
+- Post history: blank version filter = no limit on that side (from/up to work independently)
+- Post history: pending banner expanded — shows each basket post with primary entity, secondary entity, date, scan ID, and × remove button
+- Post history: "Run investigation →" button auto-navigates to Investigate tab and runs immediately
+- Investigate: results persist while tab is active, survive navigation away and back
+- All dates: switched to DD/MM/YYYY format throughout
+- Bottom bar: app version now always reads from APP_VERSION constant — fixes stale version occasionally showing
+
 ### v2.13.6 (admin-dev) | Server: v1.19.1
 - Timeline: label column reduced to 120px — timeline now starts at ~18% of SVG width
 - Timeline: entity label font reduced to 8px, wrap at 16 chars — cleaner and less wide
