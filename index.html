@@ -246,7 +246,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.13.6</div>
+      <div class="version-badge" id="version-badge">v2.13.7</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -460,19 +460,19 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
             </div>
             <div class="filter-group">
               <div class="filter-label">App version — from</div>
-              <input type="text" class="filter-input" id="f-app-version" placeholder="e.g. 2.11.0" oninput="applyFilters()" />
+              <select class="filter-input" id="f-app-version" onchange="applyFilters()"><option value="">All</option></select>
             </div>
             <div class="filter-group">
               <div class="filter-label">App version — up to</div>
-              <input type="text" class="filter-input" id="f-app-version-to" placeholder="e.g. 2.13.0" oninput="applyFilters()" />
+              <select class="filter-input" id="f-app-version-to" onchange="applyFilters()"><option value="">All</option></select>
             </div>
             <div class="filter-group">
               <div class="filter-label">Server version — from</div>
-              <input type="text" class="filter-input" id="f-server-version" placeholder="e.g. 1.17.0" oninput="applyFilters()" />
+              <select class="filter-input" id="f-server-version" onchange="applyFilters()"><option value="">All</option></select>
             </div>
             <div class="filter-group">
               <div class="filter-label">Server version — up to</div>
-              <input type="text" class="filter-input" id="f-server-version-to" placeholder="e.g. 1.19.0" oninput="applyFilters()" />
+              <select class="filter-input" id="f-server-version-to" onchange="applyFilters()"><option value="">All</option></select>
             </div>
             <div class="filter-group">
               <div class="filter-label">Date from</div>
@@ -539,11 +539,14 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
             <span class="filter-count" id="filter-count"></span>
           </div>
         </div>
-      <div id="investigate-pending-banner" style="display:none;background:var(--blue-dim);border:1px solid rgba(26,107,255,.25);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:10px">
-        <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="5" cy="7.5" r="1.5" stroke="var(--blue)" stroke-width="1.2"/><circle cx="10" cy="4" r="1.5" stroke="var(--blue)" stroke-width="1.2"/><circle cx="10" cy="11" r="1.5" stroke="var(--blue)" stroke-width="1.2"/><line x1="6.4" y1="6.7" x2="8.7" y2="4.8" stroke="var(--blue)" stroke-width="1.2"/><line x1="6.4" y1="8.3" x2="8.7" y2="10.2" stroke="var(--blue)" stroke-width="1.2"/></svg>
-        <span style="font-size:12px;font-weight:700;color:var(--blue)" id="pending-banner-text">0 posts pending investigation</span>
-        <button class="btn btn-sm btn-primary" style="margin-left:auto;font-size:11px" onclick="showPage('investigate',document.getElementById('nav-investigate'))">Open investigate →</button>
-        <button class="btn btn-sm" style="font-size:11px" onclick="clearInvestigation()">Clear</button>
+      <div id="investigate-pending-banner" style="display:none;background:var(--blue-dim);border:1px solid rgba(26,107,255,.25);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="5" cy="7.5" r="1.5" stroke="var(--blue)" stroke-width="1.2"/><circle cx="10" cy="4" r="1.5" stroke="var(--blue)" stroke-width="1.2"/><circle cx="10" cy="11" r="1.5" stroke="var(--blue)" stroke-width="1.2"/><line x1="6.4" y1="6.7" x2="8.7" y2="4.8" stroke="var(--blue)" stroke-width="1.2"/><line x1="6.4" y1="8.3" x2="8.7" y2="10.2" stroke="var(--blue)" stroke-width="1.2"/></svg>
+          <span style="font-size:12px;font-weight:700;color:var(--blue)" id="pending-banner-text">0 posts pending investigation</span>
+          <button class="btn btn-sm btn-primary" style="margin-left:auto;font-size:11px" onclick="openAndRunInvestigation()">Run investigation →</button>
+          <button class="btn btn-sm" style="font-size:11px" onclick="clearInvestigation()">Clear</button>
+        </div>
+        <div id="pending-basket-list"></div>
       </div>
         <div id="history-list"></div>
       </div><!-- end page-content -->
@@ -1126,7 +1129,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
 <div class="bottom-bar">
   <span><span class="status-dot warn" id="bar-status-dot"></span><span id="bar-status-text">Connecting...</span></span>
   <div class="bar-divider"></div>
-  <span>app v<span id="bar-app-ver">2.12.4</span></span>
+  <span>app v<span id="bar-app-ver">—</span></span>
   <div class="bar-divider"></div>
   <span id="bar-srv-ver">srv —</span>
   <div class="bar-right" style="font-size:10px;color:var(--text3)">Admin</div>
@@ -1309,7 +1312,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.13.6';
+const APP_VERSION = '2.13.7';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1352,7 +1355,7 @@ function renderDbChangelog() {
   }
   el.innerHTML = log.map(function(entry) {
     const d = new Date(entry.ts);
-    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const dateStr = d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const typeLabel = entry.type === 'refresh' ? '✦ AI Refresh' : entry.type === 'import' ? '⬆ Import' : entry.type === 'add' ? '+ Entity added' : entry.type === 'delete' ? '− Entity deleted' : '✎ Edit';
     const changesList = Array.isArray(entry.changes)
       ? '<ul class="changelog-changed">' + entry.changes.map(function(c){ return '<li>' + escHtml(c) + '</li>'; }).join('') + '</ul>'
@@ -1380,7 +1383,7 @@ function renderLastRefreshInfo() {
   if (!el) return;
   if (!info) { el.style.display = 'none'; return; }
   const d = new Date(info.ts);
-  const dateStr = d.toLocaleDateString() + ' at ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const dateStr = d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' at ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   const changeText = info.changed > 0 ? info.changed + ' entities updated' : 'no changes';
   el.style.display = 'block';
   el.innerHTML = 'Last refresh: ' + dateStr + ' · ' + changeText;
@@ -1660,13 +1663,42 @@ function updatePendingBanner() {
   const basket = getInvestigationBasket();
   const banner = document.getElementById('investigate-pending-banner');
   const text = document.getElementById('pending-banner-text');
+  const listEl = document.getElementById('pending-basket-list');
   if (!banner) return;
   if (basket.length > 0) {
-    banner.style.display = 'flex';
+    banner.style.display = 'block';
     if (text) text.textContent = basket.length + ' post' + (basket.length > 1 ? 's' : '') + ' pending investigation';
+    if (listEl) {
+      listEl.innerHTML = basket.map(function(p) {
+        const d = p.ts ? new Date(p.ts) : null;
+        const dateStr = d ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+        const primary = (p.topMatches||[])[0] || '—';
+        const secondary = (p.topMatches||[])[1] || '';
+        return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-top:1px solid rgba(26,107,255,.15)">' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">' +
+              '<span style="font-size:11px;font-weight:700;color:var(--blue)">' + escHtml(primary) + (p.overallScore ? ' · ' + p.overallScore + '%' : '') + '</span>' +
+              (secondary ? '<span style="font-size:10px;color:var(--text3)">/ ' + escHtml(secondary) + '</span>' : '') +
+              '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + dateStr + '</span>' +
+            '</div>' +
+            (p._summary ? '<div style="font-size:10px;color:var(--text2);font-style:italic;margin-bottom:2px">' + escHtml(p._summary) + '</div>' : '') +
+            '<div style="font-family:var(--mono);font-size:9px;color:var(--text3)">' + escHtml(p.scanId) + '</div>' +
+          '</div>' +
+          '<button onclick="removePendingPost(\'' + escHtml(p.scanId) + '\')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0;line-height:1" title="Remove">×</button>' +
+        '</div>';
+      }).join('');
+    }
   } else {
     banner.style.display = 'none';
+    if (listEl) listEl.innerHTML = '';
   }
+}
+
+function removePendingPost(scanId) {
+  removeFromInvestigation(scanId);
+  document.querySelectorAll('[data-investigate="' + scanId + '"]').forEach(function(btn){ btn.classList.remove('added'); btn.textContent = '+ Investigate'; });
+  updateInvestigateCount();
+  updatePendingBanner();
 }
 function addToInvestigation(scanId) {
   const basket = getInvestigationBasket();
@@ -1713,7 +1745,7 @@ function renderBasket() {
   }
   el.innerHTML = basket.map(function(e) {
     const d = e.ts ? new Date(e.ts) : null;
-    const dateStr = d ? d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
+    const dateStr = d ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
     const platform = e.platform === 'news' ? getDomainDisplayName(e.url) : (e.platform || 'unknown');
     const topEntity = (e.topMatches||[])[0] || e.overallLabel || '—';
     const excerpt = (e.postText||'').slice(0,180).replace(/</g,'&lt;');
@@ -1738,6 +1770,11 @@ const CLUSTER_COLORS = [
 ];
 
 // ─── RUN INVESTIGATION ───
+async function openAndRunInvestigation() {
+  showPage('investigate', document.getElementById('nav-investigate'));
+  await runInvestigation();
+}
+
 async function runInvestigation() {
   const serverUrl = getServerUrl();
   if (!serverUrl) { toast('Server URL not configured.'); return; }
@@ -1835,7 +1872,7 @@ function renderInvestigateResults(syntheses, clusters, isolated, connections, ba
     if (cid) {
       html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">';
       html += '<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-dim);border:1px solid rgba(26,107,255,.2);border-radius:6px;padding:3px 10px">' + escHtml(cid) + '</span>';
-      html += '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + new Date().toLocaleDateString() + '</span>';
+      html += '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + '</span>';
       html += '</div>';
     }
     // Rename field
@@ -1857,7 +1894,7 @@ function renderInvestigateResults(syntheses, clusters, isolated, connections, ba
     clusterPosts.forEach(function(p) {
       if (!p) return;
       const d = p.ts ? new Date(p.ts) : null;
-      html += '<span style="display:inline-flex;align-items:center;gap:5px;background:' + color.bg + ';color:' + color.text + ';border:1px solid ' + color.border + ';border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700">' + escHtml(p.scanId) + (d ? ' · ' + d.toLocaleDateString() : '') + '</span>';
+      html += '<span style="display:inline-flex;align-items:center;gap:5px;background:' + color.bg + ';color:' + color.text + ';border:1px solid ' + color.border + ';border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700">' + escHtml(p.scanId) + (d ? ' · ' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '') + '</span>';
     });
     html += '</div></div></div></div>';
   });
@@ -1948,7 +1985,7 @@ function renderInvestigateTimeline(basket, clusters, isolated, postClusterMap, c
       primary: (p.topMatches||[])[0] || NO_ENTITY,
       score: (p.overallScore||0),
       secondary: (p.topMatches||[])[1] || '',
-      date: d ? d.toLocaleDateString() : '',
+      date: d ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '',
       summary: p._summary || ''
     };
   });
@@ -2065,7 +2102,7 @@ function renderInvestigateLegend(basket, clusters, isolated, postClusterMap) {
       html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:' + color.bg + ';border:1.5px solid ' + color.border + ';font-size:10px;font-weight:700;color:' + color.text + ';flex-shrink:0">P' + idx + '</span>';
       html += '<span style="font-weight:700;color:var(--text)">' + escHtml((p.topMatches||[])[0] || p.overallLabel || '') + '</span>';
       html += '<span style="font-family:var(--mono);font-size:11px;font-weight:700;color:' + color.text + ';background:' + color.bg + ';border:1px solid ' + color.border + ';border-radius:99px;padding:1px 8px">' + (p.overallScore||0) + '%</span>';
-      if (d) html += '<span style="font-size:10px;color:var(--text3)">' + d.toLocaleDateString() + '</span>';
+      if (d) html += '<span style="font-size:10px;color:var(--text3)">' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + '</span>';
       if (platform) html += '<span style="font-size:10px;color:var(--text3)">' + escHtml(platform) + '</span>';
       html += '<span style="font-family:var(--mono);font-size:9px;color:var(--text3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(p.scanId) + '</span>';
       if (p.url) html += '<a href="' + escHtml(p.url) + '" target="_blank" rel="noopener" style="font-size:10px;color:var(--blue);font-weight:700;white-space:nowrap;text-decoration:none;flex-shrink:0">↗ Go to post</a>';
@@ -2088,7 +2125,7 @@ function renderInvestigateLegend(basket, clusters, isolated, postClusterMap) {
       html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#f1efe8;border:1px solid #b4b2a9;font-size:10px;font-weight:700;color:#888780;flex-shrink:0">P' + idx + '</span>';
       html += '<span style="color:var(--text3)">' + escHtml((p.topMatches||[])[0] || p.overallLabel || '') + '</span>';
       html += '<span style="font-size:10px;color:var(--text3);font-style:italic">No connection detected</span>';
-      if (d) html += '<span style="font-size:10px;color:var(--text3)">' + d.toLocaleDateString() + '</span>';
+      if (d) html += '<span style="font-size:10px;color:var(--text3)">' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + '</span>';
       if (p.url) html += '<a href="' + escHtml(p.url) + '" target="_blank" rel="noopener" style="font-size:10px;color:var(--blue);font-weight:700;white-space:nowrap;text-decoration:none;margin-left:auto;flex-shrink:0">↗ Go to post</a>';
       html += '</div>';
       html += '</div>';
@@ -2111,7 +2148,7 @@ function renderStatsPage() {
   if (el('stats-client-scans')) el('stats-client-scans').textContent = clientCount;
   if (el('stats-actor-scans')) el('stats-actor-scans').textContent = actorCount;
   const last = h.length > 0 ? new Date(h[0].ts) : null;
-  if (el('stats-last-scan') && last) el('stats-last-scan').textContent = 'Last scan: ' + last.toLocaleDateString() + ' ' + last.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if (el('stats-last-scan') && last) el('stats-last-scan').textContent = 'Last scan: ' + last.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + last.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   // Token counts from stats
   if (_tokenStats) {
     const s = _tokenStats;
@@ -2136,7 +2173,7 @@ function updateScanCounter() {
   if (s.last) {
     const d = new Date(s.last);
     const lastEl = document.getElementById('scan-last');
-    if (lastEl) lastEl.textContent = 'Last: ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    if (lastEl) lastEl.textContent = 'Last: ' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }
   const h = getHistory();
   const clientCount = h.filter(function(e){ return e.source === 'client' && !e.failed; }).length;
@@ -2328,6 +2365,27 @@ function renderEntityTags() {
   const tags=document.getElementById('f-entity-tags'); if(!tags) return;
   tags.innerHTML=selectedEntities.map(function(e){ return '<span class="entity-tag" onclick="toggleEntityFilter('+e.id+',\''+e.name.replace(/'/g,"\\'")+'\')">' + e.name + '<span class="entity-tag-remove">×</span></span>'; }).join('');
   const si=document.getElementById('f-entity-search'); if(si) si.value='';
+}
+
+function populateVersionDropdowns() {
+  const h = getHistory();
+  function parseVer(v) { const p=(v||'').split('.').map(Number); return [p[0]||0,p[1]||0,p[2]||0]; }
+  function cmpVer(a,b) { const av=parseVer(a),bv=parseVer(b); for(let i=0;i<3;i++){if(av[i]!==bv[i])return av[i]-bv[i];} return 0; }
+
+  const appVers = [...new Set(h.map(function(e){ return e.appVersion||''; }).filter(Boolean))].sort(cmpVer);
+  const srvVers = [...new Set(h.map(function(e){ return e.serverVersion||''; }).filter(Boolean))].sort(cmpVer);
+
+  function fillSelect(id, versions) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">All</option>' + versions.map(function(v){ return '<option value="'+escHtml(v)+'">'+escHtml(v)+'</option>'; }).join('');
+    if (cur && versions.includes(cur)) sel.value = cur;
+  }
+  fillSelect('f-app-version', appVers);
+  fillSelect('f-app-version-to', appVers);
+  fillSelect('f-server-version', srvVers);
+  fillSelect('f-server-version-to', srvVers);
 }
 
 function applyFilters() {
@@ -3011,7 +3069,7 @@ function renderClustersHistory() {
     window._wbtClustersCache = clusters;
     el.innerHTML = clusters.map(function(c, idx) {
       const d = c.ts ? new Date(c.ts) : null;
-      const dateStr = d ? d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
+      const dateStr = d ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
       const srcBadge = '<span class="source-badge ' + (c.source||'admin') + '">' + (c.source||'admin') + '</span>';
       return '<div class="card" style="margin-bottom:10px;cursor:pointer" onclick="openClusterFromHistory(' + idx + ')">' +
         '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">' +
@@ -3092,7 +3150,7 @@ function openClusterFromHistory(idx) {
   // Cluster ID header
   html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">';
   html += '<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-dim);border:1px solid rgba(26,107,255,.2);border-radius:6px;padding:3px 10px">' + escHtml(c.id) + '</span>';
-  const cDate = c.ts ? new Date(c.ts).toLocaleDateString() : '';
+  const cDate = c.ts ? new Date(c.ts).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
   if (cDate) html += '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + cDate + '</span>';
   html += '</div>';
   // Rename field
@@ -3416,6 +3474,7 @@ function openHistoryEntry(id) {
 }
 
 function renderHistory() {
+  populateVersionDropdowns();
   applyFilters();
 }
 
@@ -3427,7 +3486,7 @@ function renderHistoryList(entries) {
   }
   list.innerHTML = entries.map(function(e) {
     const d = new Date(e.ts);
-    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const dateStr = d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const scanId = e.scanId || ('WBT-legacy-' + e.id);
     const platformIcon = {x:'𝕏',instagram:'📷',facebook:'f',news:'📰',unknown:'🔗'}[e.platform||'unknown']||'🔗';
 
@@ -3774,7 +3833,7 @@ function renderActors() {
     return '<div class="actor-card">' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">' +
         scanIdBadge + srcBadge + userBadge +
-        (d ? '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + '</span>' : '') +
+        (d ? '<span style="font-size:10px;color:var(--text3);margin-left:auto">' + d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + '</span>' : '') +
       '</div>' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">' +
         '<div style="flex:1">' +
@@ -3829,6 +3888,8 @@ window.addEventListener('DOMContentLoaded', function() {
   if (dbBadge) dbBadge.textContent = entities.length;
   renderDbVersion();
   document.getElementById('version-badge').textContent = 'v' + APP_VERSION;
+  const barAppVer = document.getElementById('bar-app-ver');
+  if (barAppVer) barAppVer.textContent = APP_VERSION;
   updateHistoryCount();
   updateScanCounter();
   updateActorsCount();
