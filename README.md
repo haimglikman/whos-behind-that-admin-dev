@@ -1,4 +1,4 @@
-### v2.13.9 (admin-dev) | Server: v1.19.2
+### v2.13.9 (admin-dev) | Server: v1.19.2 | Client: v1.15.4
 - Clusters history: client-originated clusters now display gracefully — posts not in admin's local history get placeholder timestamps spread 1 day apart so they don't all stack on top of each other
 - Clusters history: cluster ID moved above timeline (prominent, at top of view)
 - Clusters history: frame and event shown as prominent labeled cards, not tiny bottom text
