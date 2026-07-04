@@ -1,3 +1,11 @@
+### v2.13.9 (admin-dev) | Server: v1.19.2
+- Clusters history: client-originated clusters now display gracefully — posts not in admin's local history get placeholder timestamps spread 1 day apart so they don't all stack on top of each other
+- Clusters history: cluster ID moved above timeline (prominent, at top of view)
+- Clusters history: frame and event shown as prominent labeled cards, not tiny bottom text
+- Clusters history: omitted posts now show their one-liner summary in legend, same as included posts
+- Investigate (live): cluster IDs now shown above timeline before running
+- Investigate (live): frame and event shown as prominent labeled cards throughout
+
 ### v2.13.8 — bug fix (admin-dev) | Server: v1.19.1
 - Fixed "clearInvestigationBasket is not defined" error when running investigation
 
