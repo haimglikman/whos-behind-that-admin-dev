@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Who's Behind That? — Admin</title>
+<title>WBT - Admin DEV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -246,7 +246,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.13.9</div>
+      <div class="version-badge" id="version-badge">v2.13.10</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -1312,7 +1312,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.13.9';
+const APP_VERSION = '2.13.10';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -2933,6 +2933,14 @@ async function saveClusterToServer(synthesis, postIds, isolatedPostIds, connecti
   const serverUrl = getServerUrl();
   if (!serverUrl) return;
   const clusterId = preGeneratedId || generateClusterId(srvVer);
+  // Build posts array for cross-device reconstruction
+  const postMap2 = {};
+  getHistory().forEach(function(p){ postMap2[p.scanId] = p; });
+  const allIds = (postIds||[]).concat(isolatedPostIds||[]);
+  const postsArr = allIds.map(function(scanId) {
+    const p = postMap2[scanId] || {};
+    return { scanId, url: p.url||'', topMatches: p.topMatches||[], overallScore: p.overallScore||0, ts: p.ts||'' };
+  });
   try {
     await fetch(serverUrl + '/clusters/save', {
       method: 'POST',
@@ -2949,6 +2957,7 @@ async function saveClusterToServer(synthesis, postIds, isolatedPostIds, connecti
         isolatedPostIds: isolatedPostIds || [],
         postSummaries: synthesis.postSummaries || [],
         connections: connections || [],
+        posts: postsArr,
         postCount: (postIds||[]).length + (isolatedPostIds||[]).length,
         source: 'admin',
         appVersion: APP_VERSION,
@@ -3113,26 +3122,23 @@ function openClusterFromHistory(idx) {
   const summaries = c.postSummaries || [];
   const isolated = c.isolatedPostIds || [];
   const connections = c.connections || [];
+  const savedPosts = c.posts || [];
 
-  // Build allPosts — fall back gracefully for posts not in local history
-  // Spread missing posts across time using saved cluster ts as anchor
+  // Build allPosts — prefer local history, fall back to saved posts data
   const allPostIds = (c.postIds||[]).concat(isolated);
   const anchorTs = c.ts ? new Date(c.ts).getTime() : Date.now();
   const allPosts = allPostIds.map(function(scanId, i) {
     const found = h.find(function(e){ return e.scanId === scanId; });
+    const saved = savedPosts.find(function(p){ return p.scanId === scanId; });
     const isConnected = (c.postIds||[]).includes(scanId);
     const sumIdx = (c.postIds||[]).indexOf(scanId);
-    if (found) {
-      return Object.assign({}, found, { _summary: sumIdx >= 0 ? summaries[sumIdx] || '' : '' });
-    }
-    // Post not in local history — create a placeholder with spread timestamps
-    return {
-      scanId: scanId, url: '', postText: '',
-      topMatches: [], overallScore: 0, overallLabel: '',
-      ts: new Date(anchorTs + i * 86400000).toISOString(), // spread 1 day apart
-      _summary: sumIdx >= 0 ? summaries[sumIdx] || '' : '',
-      _missing: true
-    };
+    const summary = sumIdx >= 0 ? summaries[sumIdx] || '' : '';
+    if (found) return Object.assign({}, found, { _summary: summary });
+    // Fall back to saved post data from cluster record
+    if (saved) return Object.assign({}, saved, { _summary: summary, _missing: true });
+    // Last resort placeholder
+    return { scanId, url: '', postText: '', topMatches: [], overallScore: 0, overallLabel: '',
+      ts: new Date(anchorTs + i * 86400000).toISOString(), _summary: summary, _missing: true };
   });
 
   const clusters = [c.postIds||[]];
