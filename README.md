@@ -1,3 +1,6 @@
+### v2.13.11 — bug fix (admin-dev) | Server: v1.19.3 | Client: v1.15.6
+- Fixed P-number scrambling — timeline and legend now assign P-numbers from the original postIds order, not the ts-sorted display order. P1/P2/P3/P4 are now identical between client and admin for the same cluster.
+
 ### v2.13.10 (admin-dev) | Server: v1.19.3 | Client: v1.15.5
 - Clusters history: now uses saved posts data to reconstruct client clusters — P-numbers, entities and URLs now match what the client showed
 - Clusters history: cluster ID moved above timeline in live investigation view
