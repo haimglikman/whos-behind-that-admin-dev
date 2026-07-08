@@ -1,3 +1,8 @@
+### v2.13.13 (admin-dev) | Server: v1.19.3 | Client: v1.15.8
+- Fixed P-number mismatch when viewing client clusters in admin — timeline and legend now preserve postIds order when reconstructing from cluster history (presorted=true), instead of re-sorting by scan timestamp which caused scrambled P-numbers and future dates
+
+### v2.13.12 — DISCAREDED (duplicate of v2.13.10)
+
 ### v2.13.11 — bug fix (admin-dev) | Server: v1.19.3 | Client: v1.15.6
 - Fixed P-number scrambling — timeline and legend now assign P-numbers from the original postIds order, not the ts-sorted display order. P1/P2/P3/P4 are now identical between client and admin for the same cluster.
 
