@@ -1,3 +1,9 @@
+### v2.13.10 (admin-dev) | Server: v1.19.3 | Client: v1.15.5
+- Clusters history: now uses saved posts data to reconstruct client clusters — P-numbers, entities and URLs now match what the client showed
+- Clusters history: cluster ID moved above timeline in live investigation view
+- Clusters history: frame and event now shown as prominent labeled cards in live investigation view
+- Tab title changed to "WBT - Admin DEV"
+
 ### v2.13.9 (admin-dev) | Server: v1.19.2 | Client: v1.15.4
 - Clusters history: client-originated clusters now display gracefully — posts not in admin's local history get placeholder timestamps spread 1 day apart so they don't all stack on top of each other
 - Clusters history: cluster ID moved above timeline (prominent, at top of view)
