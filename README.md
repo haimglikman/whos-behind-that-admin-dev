@@ -1,3 +1,6 @@
+### v2.13.14 (admin-dev) | Server: v1.19.3 | Client: v1.15.9
+- Fixed posts array always being empty when saving clusters — now built from the basket (in-memory) instead of getHistory() which could miss posts not in current localStorage session
+
 ### v2.13.13 (admin-dev) | Server: v1.19.3 | Client: v1.15.8
 - Fixed P-number mismatch when viewing client clusters in admin — timeline and legend now preserve postIds order when reconstructing from cluster history (presorted=true), instead of re-sorting by scan timestamp which caused scrambled P-numbers and future dates
 
