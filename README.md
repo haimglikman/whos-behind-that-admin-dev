@@ -1,3 +1,7 @@
+### v2.13.15 (admin-dev) | Server: v1.19.4 | Client: v1.15.10
+- Omitted posts in legend now show secondary entity and summary, same as included posts
+- Render order: timeline → synopsis → legend (was: timeline → legend → synopsis)
+
 ### v2.13.14 (admin-dev) | Server: v1.19.3 | Client: v1.15.9
 - Fixed posts array always being empty when saving clusters — now built from the basket (in-memory) instead of getHistory() which could miss posts not in current localStorage session
 
