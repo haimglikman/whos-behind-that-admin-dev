@@ -248,7 +248,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.21.0</div>
+      <div class="version-badge" id="version-badge">v2.22.0</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -414,7 +414,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
             </div>
           </div>
           <div class="analysis-card" style="margin-bottom:12px">
-            <div class="card-label">Narrative alignment — entities at 85%+ fit</div>
+            <div class="card-label">Narrative alignment — <span id="alignment-rule">entities at 85%+ fit</span></div>
             <div id="r-primary-matches"></div>
             <div id="r-secondary-matches"></div>
           </div>
@@ -907,8 +907,16 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <h2>Changelog</h2>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v2.21.0</div>
+            <div class="changelog-ver">v2.22.0</div>
             <div class="changelog-date">Current version</div>
+            <ul>
+              <li><strong>Verdict-based results for the v2 engine:</strong> with server 2.x, matches are shown by the judge's verdict — primary from 60%, secondary from 50% — instead of a fixed 85% cut-off. Results from server 1.x keep the 85% rule.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v2.21.0</div>
+            <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>TikTok coverage:</strong> TikTok (and YouTube) added to the Source filter; actor research available for TikTok posts; TikTok name and icon on carousel slides.</li>
               <li><strong>User filter:</strong> replaces the Admin/Client source filter — select Admin or a specific client user.</li>
@@ -1561,7 +1569,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.21.0';
+const APP_VERSION = '2.22.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -2975,10 +2983,20 @@ function buildResult(analysis, post, entities) {
     });
   }).sort(function(a,b){ return b.pct - a.pct; });
 
-  // Filter to 85%+ and enforce max limits: 3 primary, 2 secondary
-  const allAboveThreshold = rawMatches.filter(function(m){ return m.pct >= 85; });
-  const primaryMatches = allAboveThreshold.filter(function(m){ return !m.secondary; }).slice(0,3);
-  const secondaryMatches = allAboveThreshold.filter(function(m){ return m.secondary; }).slice(0,2);
+  // Display rule depends on which engine produced the result:
+  //  v2 (server 2.x, has 'triage'): the judge's verdict decides — primary ≥60%, secondary ≥50%
+  //  v1 (server 1.x): legacy 85% threshold (Sonnet 4.5 scored higher)
+  const isV2 = !!(analysis && analysis.triage !== undefined);
+  let primaryMatches, secondaryMatches;
+  if (isV2) {
+    primaryMatches = rawMatches.filter(function(m){ return m.alignment === 'primary' && m.pct >= 60; }).slice(0,3);
+    secondaryMatches = rawMatches.filter(function(m){ return m.alignment === 'secondary' && m.pct >= 50; }).slice(0,2);
+  } else {
+    const allAboveThreshold = rawMatches.filter(function(m){ return m.pct >= 85; });
+    primaryMatches = allAboveThreshold.filter(function(m){ return !m.secondary; }).slice(0,3);
+    secondaryMatches = allAboveThreshold.filter(function(m){ return m.secondary; }).slice(0,2);
+  }
+  const ruleText = isV2 ? "by the judge's verdict (primary ≥60%, secondary ≥50%)" : 'above 85%';
   const matches = primaryMatches.concat(secondaryMatches);
 
   const topPrimary = primaryMatches.length > 0 ? primaryMatches[0] : (matches.length > 0 ? matches[0] : null);
@@ -3001,13 +3019,16 @@ function buildResult(analysis, post, entities) {
       score: topMatch,
       label: topNames || 'No strong alignment detected',
       desc: matches.length > 0
-        ? 'Claude AI found ' + primaryMatches.length + ' primary and ' + secondaryMatches.length + ' secondary alignment' + (secondaryMatches.length !== 1 ? 's' : '') + ' above 85% across ' + entities.length + ' entities. Strongest: ' + (topName || '—') + ' at ' + topMatch + '%.'
-        : 'Claude AI found no entity alignment above 85% across ' + entities.length + ' entities. Post does not strongly serve any tracked entity\'s agenda.'
-    }
+        ? 'Claude AI found ' + primaryMatches.length + ' primary and ' + secondaryMatches.length + ' secondary alignment' + (secondaryMatches.length !== 1 ? 's' : '') + ' ' + ruleText + ' across ' + entities.length + ' entities. Strongest: ' + (topName || '—') + ' at ' + topMatch + '%.'
+        : 'Claude AI found no entity alignment ' + ruleText + ' across ' + entities.length + ' entities. Post does not strongly serve any tracked entity\'s agenda.'
+    },
+    displayRule: isV2 ? 'judge verdict — primary ≥60%, secondary ≥50%' : 'entities at 85%+ fit'
   };
 }
 
 function showResults(url, d) {
+  const ruleEl = document.getElementById('alignment-rule');
+  if (ruleEl) ruleEl.textContent = d.displayRule || 'entities at 85%+ fit';
   document.getElementById('loader').classList.remove('active');
   document.getElementById('results').classList.add('active');
   document.getElementById('result-url-label').textContent = url;
