@@ -1,4 +1,7 @@
-### v2.21.0 (admin) to run tests
+### v2.22.0 (admin) | Server: v2.0.3 (dev) / v1.28.0 (live) | Client: v1.18.1
+- Verdict-based display for the v2 engine: results from server 2.x are shown by the judge's verdict — primary from 60% (up to 3), secondary from 50% (up to 2) — instead of a fixed 85% cut-off
+- Results from server 1.x keep the 85% rule — live behavior unchanged
+- Result card label shows which display rule was applied
 
 ### v2.13.15 (admin-dev) | Server: v1.19.4 | Client: v1.15.10
 - Omitted posts in legend now show secondary entity and summary, same as included posts
