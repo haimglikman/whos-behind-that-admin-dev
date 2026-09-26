@@ -1,3 +1,5 @@
+### v2.21.0 (admin) to run tests
+
 ### v2.13.15 (admin-dev) | Server: v1.19.4 | Client: v1.15.10
 - Omitted posts in legend now show secondary entity and summary, same as included posts
 - Render order: timeline → synopsis → legend (was: timeline → legend → synopsis)
