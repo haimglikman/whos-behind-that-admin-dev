@@ -248,7 +248,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.22.0</div>
+      <div class="version-badge" id="version-badge">v2.23.0</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -867,7 +867,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           </div>
           <div class="card">
             <div class="card-label">Token usage</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;margin-bottom:14px">
               <div>
                 <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Post scan tokens</div>
                 <div style="font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono)" id="stats-token-post">—</div>
@@ -877,8 +877,13 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
                 <div style="font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono)" id="stats-token-actor">—</div>
               </div>
               <div>
-                <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Total tokens</div>
+                <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Total Claude tokens</div>
                 <div style="font-size:22px;font-weight:700;color:var(--blue);font-family:var(--mono)" id="stats-token-total">—</div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Jev screening tokens</div>
+                <div style="font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono)" id="stats-token-jev">—</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px" id="stats-jev-calls"></div>
               </div>
             </div>
             <div style="padding-top:14px;border-top:1px solid var(--border)">
@@ -886,6 +891,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
                 <div>
                   <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Estimated cost</div>
                   <div style="font-size:28px;font-weight:700;color:var(--green);font-family:var(--mono)" id="stats-cost">—</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px" id="stats-cost-breakdown"></div>
                 </div>
                 <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                   <div style="font-size:11px;color:var(--text3);font-weight:600">Rates ($/M tokens)</div>
@@ -894,8 +900,10 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
                     <input type="number" id="rate-input" step="0.01" style="width:64px;font-size:11px;padding:4px 7px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-family:var(--mono);outline:none" oninput="saveRates();renderStatsPage()" />
                     <span style="font-size:11px;color:var(--text3)">Output:</span>
                     <input type="number" id="rate-output" step="0.01" style="width:64px;font-size:11px;padding:4px 7px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-family:var(--mono);outline:none" oninput="saveRates();renderStatsPage()" />
+                    <span style="font-size:11px;color:var(--text3)">Jev:</span>
+                    <input type="number" id="rate-jev" step="0.001" style="width:64px;font-size:11px;padding:4px 7px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-family:var(--mono);outline:none" oninput="saveRates();renderStatsPage()" />
                   </div>
-                  <div style="font-size:10px;color:var(--text3)">Note: only scans from v1.15.0+ include token data</div>
+                  <div style="font-size:10px;color:var(--text3)">Note: only scans from v1.15.0+ include token data; Jev usage is tracked from server v2.0.4</div>
                 </div>
               </div>
             </div>
@@ -907,8 +915,17 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <h2>Changelog</h2>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v2.22.0</div>
+            <div class="changelog-ver">v2.23.0</div>
             <div class="changelog-date">Current version</div>
+            <ul>
+              <li><strong>Jev usage monitoring:</strong> Stats show Jev screening tokens (post screenings and cluster checks), a Jev rate, and a Claude / Jev cost split.</li>
+              <li><strong>Fix:</strong> token stats now load on the first visit to About &amp; Setup.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v2.22.0</div>
+            <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>Verdict-based results for the v2 engine:</strong> with server 2.x, matches are shown by the judge's verdict — primary from 60%, secondary from 50% — instead of a fixed 85% cut-off. Results from server 1.x keep the 85% rule.</li>
             </ul>
@@ -1569,7 +1586,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.22.0';
+const APP_VERSION = '2.23.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -1834,13 +1851,18 @@ function updateHistoryCount() {
 // TOKEN TRACKING
 // ─────────────────────────────────────────────
 function getRates() {
-  try { return JSON.parse(localStorage.getItem('wbt_rates') || '{"input":3,"output":15}'); }
-  catch(e) { return { input: 3, output: 15 }; }
+  let r;
+  try { r = JSON.parse(localStorage.getItem('wbt_rates') || '{"input":3,"output":15}'); }
+  catch(e) { r = { input: 3, output: 15 }; }
+  if (typeof r.jev !== 'number') r.jev = 0.042;
+  return r;
 }
 function saveRates() {
   const inp = parseFloat(document.getElementById('rate-input').value) || 3;
   const out = parseFloat(document.getElementById('rate-output').value) || 15;
-  localStorage.setItem('wbt_rates', JSON.stringify({ input: inp, output: out }));
+  const jevEl = document.getElementById('rate-jev');
+  const jev = jevEl ? (parseFloat(jevEl.value) || 0.042) : 0.042;
+  localStorage.setItem('wbt_rates', JSON.stringify({ input: inp, output: out, jev: jev }));
 }
 function initRates() {
   const r = getRates();
@@ -1848,6 +1870,8 @@ function initRates() {
   const outEl = document.getElementById('rate-output');
   if (inEl) inEl.value = r.input;
   if (outEl) outEl.value = r.output;
+  const jevEl = document.getElementById('rate-jev');
+  if (jevEl) jevEl.value = r.jev;
 }
 function formatTokens(n) {
   if (!n) return '0';
@@ -1863,24 +1887,8 @@ function calcCost(inTok, outTok) {
 let _tokenStats = null;
 
 function updateTokenDisplay() {
-  if (!_tokenStats) return;
-  const s = _tokenStats;
-  const postIn = (s.post?.admin?.in || 0) + (s.post?.client?.in || 0);
-  const postOut = (s.post?.admin?.out || 0) + (s.post?.client?.out || 0);
-  const actorIn = s.actor?.in || 0;
-  const actorOut = s.actor?.out || 0;
-  const totalIn = postIn + actorIn;
-  const totalOut = postOut + actorOut;
-  const cost = calcCost(totalIn, totalOut);
-
-  const postEl = document.getElementById('token-post');
-  const actorEl = document.getElementById('token-actor');
-  const totalEl = document.getElementById('token-total');
-  const costEl = document.getElementById('token-cost');
-  if (postEl) postEl.textContent = formatTokens(postIn + postOut);
-  if (actorEl) actorEl.textContent = formatTokens(actorIn + actorOut);
-  if (totalEl) totalEl.textContent = formatTokens(totalIn + totalOut);
-  if (costEl) costEl.textContent = '$' + cost.toFixed(3);
+  // Server stats arrived — re-render the About & Setup stats (old element IDs no longer exist)
+  if (_tokenStats) renderStatsPage();
 }
 
 async function fetchTokenStats() {
@@ -2432,7 +2440,15 @@ function renderStatsPage() {
     const actorOut = s.actor?.out||0;
     const totalIn = postIn + actorIn;
     const totalOut = postOut + actorOut;
-    const cost = calcCost(totalIn, totalOut);
+    const claudeCost = calcCost(totalIn, totalOut);
+    const jevScan = (s.jev && s.jev.scan) || { tokens: 0, calls: 0 };
+    const jevPairs = (s.jev && s.jev.pairs) || { tokens: 0, calls: 0 };
+    const jevTokens = jevScan.tokens + jevPairs.tokens;
+    const jevCost = (jevTokens / 1000000) * getRates().jev;
+    const cost = claudeCost + jevCost;
+    if (el('stats-token-jev')) el('stats-token-jev').textContent = s.jev ? formatTokens(jevTokens) : '—';
+    if (el('stats-jev-calls')) el('stats-jev-calls').textContent = s.jev ? (jevScan.calls + ' post screening' + (jevScan.calls === 1 ? '' : 's') + ' · ' + jevPairs.calls + ' cluster check' + (jevPairs.calls === 1 ? '' : 's')) : 'Requires server v2.0.4+';
+    if (el('stats-cost-breakdown')) el('stats-cost-breakdown').textContent = 'Claude $' + claudeCost.toFixed(3) + ' · Jev $' + jevCost.toFixed(4);
     if (el('stats-token-post')) el('stats-token-post').textContent = formatTokens(postIn+postOut);
     if (el('stats-token-actor')) el('stats-token-actor').textContent = formatTokens(actorIn+actorOut);
     if (el('stats-token-total')) el('stats-token-total').textContent = formatTokens(totalIn+totalOut);
