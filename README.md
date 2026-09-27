@@ -1,3 +1,9 @@
+### v2.24.0 (admin) | Server: v2.0.5 | Client: v1.18.1
+- Post history: Claude and Jev tokens per scan with combined cost, plus a model badge (judge + screening model)
+- New Model filter in post history
+- Tools & dependencies: new "Models used" section, TypeSafe/OpenRouter listed, and the live model configuration reported by the server
+- Fixed: server-synced scans (client scans, other devices) now show token counts; manually pasted scans now record tokens
+
 ### v2.23.0 (admin) | Server: v2.0.4 | Client: v1.18.1
 - Stats: Jev screening tokens (post screenings and cluster checks), Jev rate, and Claude / Jev cost split
 - "Total tokens" renamed to "Total Claude tokens"
