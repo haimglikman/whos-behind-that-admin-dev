@@ -1,3 +1,8 @@
+### v2.23.0 (admin) | Server: v2.0.4 | Client: v1.18.1
+- Stats: Jev screening tokens (post screenings and cluster checks), Jev rate, and Claude / Jev cost split
+- "Total tokens" renamed to "Total Claude tokens"
+- Fixed: token stats now load on the first visit to About & Setup
+
 ### v2.22.0 (admin) | Server: v2.0.3 (dev) / v1.28.0 (live) | Client: v1.18.1
 - Verdict-based display for the v2 engine: results from server 2.x are shown by the judge's verdict — primary from 60% (up to 3), secondary from 50% (up to 2) — instead of a fixed 85% cut-off
 - Results from server 1.x keep the 85% rule — live behavior unchanged
