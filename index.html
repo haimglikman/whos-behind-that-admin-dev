@@ -248,7 +248,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.23.0</div>
+      <div class="version-badge" id="version-badge">v2.24.0</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -544,6 +544,12 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
               </select>
             </div>
             <div class="filter-group">
+              <div class="filter-label">Model</div>
+              <select class="filter-select" id="f-model" onchange="applyFilters()">
+                <option value="">All models</option>
+              </select>
+            </div>
+            <div class="filter-group">
               <div class="filter-label">Actor handle</div>
               <select class="filter-input" id="f-actor" onchange="applyFilters()" style="width:100%">
                 <option value="">All actors</option>
@@ -810,7 +816,8 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <!-- Tools & dependencies -->
         <div class="about-section" style="margin-bottom:20px">
           <h2>Tools &amp; dependencies</h2>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Third-party services and libraries WBT relies on. Config shows the Render environment variable where one is required.</p>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Third-party services, models and libraries WBT relies on. Config shows the Render environment variable where one is required; models listed are the defaults, and each can be changed with its variable.</p>
+          <div id="tools-live-config" style="font-size:11px;color:var(--text2);margin-bottom:10px;font-family:var(--mono)"></div>
           <div class="card" style="padding:0;overflow-x:auto">
             <table style="width:100%;border-collapse:collapse;font-size:11px">
               <thead><tr style="text-align:left;border-bottom:1px solid var(--border)">
@@ -825,9 +832,16 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Neon PostgreSQL</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Shared database: scans, clusters, actors, entities, prompts, FAQ, client sessions</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">DATABASE_URL</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">GitHub</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Source repositories; pushes trigger Render deploys</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">All</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">GitHub Pages</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Hosts the admin and client apps</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Admin, Client</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
+                <tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">Models used</td></tr>
+                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Jev 1.13 (TypeSafe)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Screening: finds which entities a post is about (mentioned, criticized, praised), and pre-checks post pairs in cluster investigations. Only its shortlist reaches Claude.</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">JEV_MODEL</td></tr>
+                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Claude Opus 5.5</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">The judge: final alignment scores, primary/secondary verdict, and the why/missing explanations</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">CLAUDE_DEEP_MODEL</td></tr>
+                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Claude Sonnet 5</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Default model: actor research and bot detection, cluster synopsis, convergent interest, entity refresh, web-search post fetching, publication research</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">CLAUDE_DEFAULT_MODEL</td></tr>
+                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Claude Haiku 4.5</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Fast tasks: translating Hebrew/Arabic posts to English for screening, and cluster connection checks</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">CLAUDE_FAST_MODEL</td></tr>
+                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Whisper large-v3 (Groq)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Transcribes video audio: TikTok, Instagram, Facebook, X</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
                 <tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">AI &amp; transcription</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Anthropic Claude API</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Entity scoring, coherence checks, cluster connections and synopsis, actor research with web search, bot detection, translation</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">ANTHROPIC_API_KEY</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Groq (Whisper large-v3)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Transcribes video audio — TikTok, Instagram, Facebook, X</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">GROQ_API_KEY</td></tr>
+                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">TypeSafe (via OpenRouter)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Runs the Jev screening model. Accessed through OpenRouter while TypeSafe's own API is waitlisted</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">TYPESAFE_API_KEY, TYPESAFE_API_URL</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">TranscriptAPI.com</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">YouTube video transcripts</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">transcriptapi_API_KEY</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">YouTube Data API v3 (Google Cloud)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">YouTube video duration and live-stream checks</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">YOUTUBE_API_KEY</td></tr>
                 <tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">Content access</td></tr>
@@ -915,8 +929,18 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <h2>Changelog</h2>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v2.23.0</div>
+            <div class="changelog-ver">v2.24.0</div>
             <div class="changelog-date">Current version</div>
+            <ul>
+              <li><strong>Post history:</strong> each scan shows Claude and Jev tokens, their combined cost, and the models used; new Model filter.</li>
+              <li><strong>Tools &amp; dependencies:</strong> new Models used section, plus the live model configuration reported by the server.</li>
+              <li><strong>Fixes:</strong> scans synced from the server (client scans, other devices) now show token counts; manually pasted scans now record tokens.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v2.23.0</div>
+            <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>Jev usage monitoring:</strong> Stats show Jev screening tokens (post screenings and cluster checks), a Jev rate, and a Claude / Jev cost split.</li>
               <li><strong>Fix:</strong> token stats now load on the first visit to About &amp; Setup.</li>
@@ -1586,7 +1610,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.23.0';
+const APP_VERSION = '2.24.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -2722,6 +2746,7 @@ function applyFilters() {
   const alignment = document.getElementById('f-alignment').value;
   const hasComment = document.getElementById('f-has-comment').value;
   const user = document.getElementById('f-user') ? document.getElementById('f-user').value : '';
+  const modelFilter = (document.getElementById('f-model') || { value: '' }).value;
   const actorFilter = (document.getElementById('f-actor')||{value:''}).value.trim().toLowerCase().replace(/^@/,'');
   // newsSiteFilter already declared above from platform value
 
@@ -2768,6 +2793,7 @@ function applyFilters() {
     if (alignment === 'secondary' && !(e.fullResult && (e.fullResult.matches||[]).some(function(m){ return m.secondary; }))) return false;
     if (alignment === 'none' && e.fullResult && (e.fullResult.matches||[]).length > 0) return false;
     if (hasComment === 'true' && !(e.comment && e.comment.trim())) return false;
+    if (modelFilter && scanJudgeLabel(e) !== modelFilter) return false;
     if (user === '__admin__') { if ((e.source||'admin') !== 'admin') return false; }
     else if (user && e.deviceId !== user) return false;
     if (actorFilter) {
@@ -2785,7 +2811,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  ['f-platform','f-alignment','f-has-comment','f-user'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-platform','f-alignment','f-has-comment','f-user','f-model'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
   ['f-app-version','f-app-version-to','f-server-version','f-server-version-to','f-scan-id','f-url','f-date-from','f-date-to','f-min-score','f-min-ai'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
   const actorSel = document.getElementById('f-actor'); if (actorSel) actorSel.value = '';
   selectedEntities=[];
@@ -2947,11 +2973,12 @@ async function analyzeWithManualText() {
     advance(3); await delay(300); advance(4); await delay(300); advance(5); await delay(200);
     const result = buildResult(analysis, {text: postText}, entities);
     const srvVer = await fetchSrvVersion(serverUrl);
-    const entry = await saveToHistory(url, postText, result, srvVer, undefined, undefined, {
+    const at = analysis._tokens || {};
+    const entry = await saveToHistory(url, postText, result, srvVer, at.input, at.output, {
       ogTitle: manualOgTitle,
       ogImage: manualOgImage,
       author: manualAuthor
-    }).catch(function(e){ console.warn('History save error:', e.message); return null; });
+    }, { jevTokens: (analysis.triage && analysis.triage.tokens) || 0, models: analysis.models || null }).catch(function(e){ console.warn('History save error:', e.message); return null; });
     result.scanId = entry ? entry.scanId : '';
     showResults(url, result);
     recordScan();
@@ -2983,7 +3010,8 @@ async function performServerAnalysis(url, serverUrl) {
   const finalUrl = data.url || url;
   const result = buildResult(data.analysis, data.post, entities);
   const srvVer = await fetchSrvVersion(serverUrl);
-  const entry = await saveToHistory(finalUrl, (data.post && data.post.text) || '', result, srvVer, data.inputTokens, data.outputTokens, data.post).catch(function(e){ console.warn('History save error:', e.message); return null; });
+  const entry = await saveToHistory(finalUrl, (data.post && data.post.text) || '', result, srvVer, data.inputTokens, data.outputTokens, data.post,
+    { jevTokens: data.jevTokens || 0, models: data.models || (data.analysis && data.analysis.models) || null }).catch(function(e){ console.warn('History save error:', e.message); return null; });
   result.scanId = entry ? entry.scanId : '';
   showResults(finalUrl, result);
   recordScan();
@@ -3973,6 +4001,10 @@ async function renderDeployedVersions() {
     if (healthRes.ok) {
       const h = await healthRes.json();
       cards.push(versionCard('Server', h.version, null, null));
+      const liveEl = document.getElementById('tools-live-config');
+      if (liveEl) liveEl.textContent = h.engine
+        ? 'Server reports — judge: ' + modelName(h.engine.judge) + ' · screening: ' + (h.engine.triage === 'off' ? 'off' : modelName(h.engine.triage)) + ' · default: ' + modelName(h.engine.default)
+        : 'Server v' + h.version + ' (v1 engine — Sonnet 4.5 for scoring)';
     }
 
     // Client sessions — one card per unique version
@@ -4705,7 +4737,7 @@ function hashToPrefix(deviceIdOrHash) {
   return Math.abs(h).toString(36).slice(0,4).toUpperCase();
 }
 
-async function saveToHistory(url, postText, result, srvVersion, inputTokens, outputTokens, postData) {
+async function saveToHistory(url, postText, result, srvVersion, inputTokens, outputTokens, postData, meta) {
   const serverUrl = getServerUrl();
   const srvVer = srvVersion || (serverUrl ? await fetchSrvVersion(serverUrl) : '?');
   const scanId = generateScanId(APP_VERSION, srvVer, 'ADMIN');
@@ -4732,7 +4764,9 @@ async function saveToHistory(url, postText, result, srvVersion, inputTokens, out
     outputTokens: outputTokens || 0,
     ogTitle: (postData && postData.ogTitle) || null,
     ogImage: (postData && postData.ogImage) || null,
-    author: (postData && (postData.author || postData.authorHandle)) || null
+    author: (postData && (postData.author || postData.authorHandle)) || null,
+    jevTokens: (meta && meta.jevTokens) || 0,
+    models: (meta && meta.models) || null
   };
   // Save to localStorage — keyed by scanId to prevent duplicates on sync
   const h = getHistory().filter(function(e){
@@ -4833,6 +4867,7 @@ async function syncHistoryFromServer() {
         existing.source = s.source || existing.source || 'admin';
         existing.deviceId = s.deviceId || existing.deviceId || null;
         if (s.fullResult) existing.fullResult = s.fullResult;
+        copyScanMeta(existing, s);
         return;
       }
       // Try match by url+timestamp
@@ -4844,6 +4879,7 @@ async function syncHistoryFromServer() {
         existingByUrl.comment = s.comment || existingByUrl.comment || '';
         existingByUrl.source = s.source || existingByUrl.source || 'admin';
         existingByUrl.deviceId = s.deviceId || existingByUrl.deviceId || null;
+        copyScanMeta(existingByUrl, s);
         byScanId[s.id] = existingByUrl;
         return;
       }
@@ -4864,7 +4900,11 @@ async function syncHistoryFromServer() {
         appVersion: s.appVersion || '?',
         serverVersion: s.serverVersion || '?',
         comment: s.comment || '',
-        fullResult: s.fullResult || null
+        fullResult: s.fullResult || null,
+        inputTokens: s.inputTokens || 0,
+        outputTokens: s.outputTokens || 0,
+        jevTokens: s.jevTokens || 0,
+        models: s.models || null
       };
     });
 
@@ -4926,8 +4966,49 @@ function openHistoryEntry(id) {
   history.pushState({ page: 'analyze', scanId: entry.scanId }, '', '#analyze/' + (entry.scanId||''));
 }
 
+// ─── MODEL LABELS ───
+const MODEL_NAMES = [
+  [/opus-5-5/, 'Opus 5.5'], [/opus-5$/, 'Opus 5'], [/sonnet-5/, 'Sonnet 5'],
+  [/sonnet-4-6/, 'Sonnet 4.6'], [/sonnet-4-5/, 'Sonnet 4.5'], [/haiku-4-5/, 'Haiku 4.5'],
+  [/jev-1\.13/i, 'Jev 1.13'], [/jev/i, 'Jev']
+];
+function modelName(id) {
+  if (!id) return '';
+  for (let i = 0; i < MODEL_NAMES.length; i++) if (MODEL_NAMES[i][0].test(id)) return MODEL_NAMES[i][1];
+  return String(id).replace(/^claude-/, '');
+}
+// The judge — the model that decided the result. Older scans carry no model data:
+// server 1.x always judged with Sonnet 4.5.
+function scanJudgeLabel(e) {
+  if (e.models && e.models.judge) return modelName(e.models.judge);
+  const sv = String(e.serverVersion || '');
+  if (/^1\./.test(sv)) return 'Sonnet 4.5 (v1)';
+  if (/^2\./.test(sv)) return 'v2 engine';
+  return 'Unknown';
+}
+function scanModelsLabel(e) {
+  const j = scanJudgeLabel(e);
+  const t = e.models && e.models.triage ? modelName(e.models.triage) : '';
+  return t ? j + ' + ' + t : j;
+}
+function copyScanMeta(target, s) {
+  if (!target.inputTokens && s.inputTokens) target.inputTokens = s.inputTokens;
+  if (!target.outputTokens && s.outputTokens) target.outputTokens = s.outputTokens;
+  if (!target.jevTokens && s.jevTokens) target.jevTokens = s.jevTokens;
+  if (!target.models && s.models) target.models = s.models;
+}
+function populateModelFilter() {
+  const sel = document.getElementById('f-model');
+  if (!sel) return;
+  const cur = sel.value;
+  const labels = Array.from(new Set(getHistory().filter(function(e){ return !e.failed; }).map(scanJudgeLabel))).sort();
+  sel.innerHTML = '<option value="">All models</option>' + labels.map(function(l){ return '<option value="' + escHtml(l) + '">' + escHtml(l) + '</option>'; }).join('');
+  if (cur && labels.indexOf(cur) !== -1) sel.value = cur;
+}
+
 function renderHistory() {
   populateVersionDropdowns();
+  populateModelFilter();
   // Populate actor dropdown from server (all clients' actors)
   const serverUrl = getServerUrl();
   const actorSel = document.getElementById('f-actor');
@@ -4990,11 +5071,15 @@ function renderHistoryList(entries) {
     const hasFullResult = !!e.fullResult;
     const srcBadge = '<span class="source-badge ' + (e.source||'admin') + '">' + (e.source||'admin') + '</span>';
     const userBadge = (e.source==='client' && e.deviceId) ? '<span class="user-badge">' + escHtml(e.deviceId) + '</span>' : '';
-    const tokenBadge = (e.inputTokens || e.outputTokens)
-      ? '<span style="font-size:9px;font-family:var(--mono);color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:99px;padding:1px 7px">' +
-        formatTokens((e.inputTokens||0)+(e.outputTokens||0)) + ' tokens' +
-        ' · $' + calcCost(e.inputTokens||0, e.outputTokens||0).toFixed(3) + '</span>'
+    const pill = 'font-size:9px;font-family:var(--mono);color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:99px;padding:1px 7px';
+    const jevTok = e.jevTokens || 0;
+    const tokenBadge = (e.inputTokens || e.outputTokens || jevTok)
+      ? '<span style="' + pill + '">' +
+        formatTokens((e.inputTokens||0)+(e.outputTokens||0)) + ' Claude' +
+        (jevTok ? ' · ' + formatTokens(jevTok) + ' Jev' : '') +
+        ' · $' + (calcCost(e.inputTokens||0, e.outputTokens||0) + (jevTok / 1000000) * getRates().jev).toFixed(3) + '</span>'
       : '';
+    const modelBadge = e.failed ? '' : '<span style="' + pill + '" title="' + escHtml(e.models ? JSON.stringify(e.models) : 'Inferred from server version') + '">' + escHtml(scanModelsLabel(e)) + '</span>';
     return '<div class="history-item">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">' +
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
@@ -5003,6 +5088,7 @@ function renderHistoryList(entries) {
           srcBadge +
           userBadge +
           tokenBadge +
+          modelBadge +
         '</div>' +
         '<span class="scan-version">' + escHtml(e.appVersion||'?') + ' / srv ' + escHtml(e.serverVersion||'?') + '</span>' +
       '</div>' +
