@@ -1,3 +1,9 @@
+### v2.28.0 (admin) | Server: v2.5.0 | Client: v1.22.0
+- Comment alignment for news sites and Telegram, in addition to YouTube and TikTok; unsupported comment systems are named on the card
+- On news articles the card appears only when there's something to show
+
+### v2.27.0 deprecated
+
 ### v2.24.0 (admin) | Server: v2.0.5 | Client: v1.18.1
 - Post history: Claude and Jev tokens per scan with combined cost, plus a model badge (judge + screening model)
 - New Model filter in post history
