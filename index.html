@@ -248,7 +248,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="white" stroke-width="1.6"/><path d="M7.5 4.5v3l2.2 1.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       </div>
       <div class="name">Who's Behind That?</div>
-      <div class="version-badge" id="version-badge">v2.24.0</div>
+      <div class="version-badge" id="version-badge">v2.28.0</div>
       <div class="server-version-badge" id="server-version-badge">srv —</div>
     </div>
     <div style="font-size:11px;color:#4a6a9a;font-weight:600">Admin</div>
@@ -455,6 +455,10 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
             <div class="card-label">Actor profile</div>
             <div id="actor-result-body"></div>
           </div>
+          <div class="analysis-card" id="comments-card" style="display:none;margin-top:12px">
+            <div class="card-label">Comment alignment</div>
+            <div id="comments-body"></div>
+          </div>
         </div>
       </div>
     </div><!-- end page-content -->
@@ -484,6 +488,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
                 <option value="instagram">Instagram</option>
                 <option value="facebook">Facebook</option>
                 <option value="tiktok">TikTok</option>
+                <option value="telegram">Telegram</option>
                 <option value="youtube">YouTube</option>
                 <option value="news">News (all)</option>
               </select>
@@ -642,8 +647,9 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
             <select id="prompts-history-select" onchange="loadPromptHistory(this.value)" class="filter-input" style="width:200px">
               <option value="">Select prompt...</option>
-              <option value="scan">Scan</option>
-              <option value="coherence">Coherence</option>
+              <option value="deep_score">Judge</option>
+              <option value="scan">Scan (legacy)</option>
+              <option value="coherence">Coherence (legacy)</option>
               <option value="connection">Connection</option>
               <option value="synopsis">Synopsis</option>
               <option value="actor">Actor</option>
@@ -668,10 +674,14 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
               <div>
                 <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Model</div>
                 <select id="prompt-modal-model" class="filter-input" style="width:100%">
+                  <option value="claude-opus-5-5">Claude Opus 5.5</option>
+                  <option value="claude-sonnet-5">Claude Sonnet 5</option>
                   <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
-                  <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
-                  <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
-                  <option value="claude-opus-4-6">Claude Opus 4.6</option>
+                  <optgroup label="Legacy — replaced automatically on server v2">
+                    <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                    <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                    <option value="claude-opus-4-6">Claude Opus 4.6</option>
+                  </optgroup>
                 </select>
               </div>
             </div>
@@ -817,6 +827,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
         <div class="about-section" style="margin-bottom:20px">
           <h2>Tools &amp; dependencies</h2>
           <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Third-party services, models and libraries WBT relies on. Config shows the Render environment variable where one is required; models listed are the defaults, and each can be changed with its variable.</p>
+          <div id="tools-source-note" style="font-size:10px;color:var(--text3);margin-bottom:6px"></div>
           <div id="tools-live-config" style="font-size:11px;color:var(--text2);margin-bottom:10px;font-family:var(--mono)"></div>
           <div class="card" style="padding:0;overflow-x:auto">
             <table style="width:100%;border-collapse:collapse;font-size:11px">
@@ -826,7 +837,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
                 <th style="padding:8px 10px;font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.07em">Used by</th>
                 <th style="padding:8px 10px;font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.07em">Config</th>
               </tr></thead>
-              <tbody>
+              <tbody id="tools-tbody">
                 <tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">Hosting &amp; data</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Render</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Hosts the WBT server (Node.js / Express)</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Neon PostgreSQL</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Shared database: scans, clusters, actors, entities, prompts, FAQ, client sessions</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">DATABASE_URL</td></tr>
@@ -835,7 +846,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
                 <tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">Models used</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Jev 1.13 (TypeSafe)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Screening: finds which entities a post is about (mentioned, criticized, praised), and pre-checks post pairs in cluster investigations. Only its shortlist reaches Claude.</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">JEV_MODEL</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Claude Opus 5.5</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">The judge: final alignment scores, primary/secondary verdict, and the why/missing explanations</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">CLAUDE_DEEP_MODEL</td></tr>
-                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Claude Sonnet 5</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Default model: actor research and bot detection, cluster synopsis, convergent interest, entity refresh, web-search post fetching, publication research</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">CLAUDE_DEFAULT_MODEL</td></tr>
+                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Claude Sonnet 5</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Default model: actor research and bot detection, cluster synopsis and membership check, convergent interest, entity refresh, web-search post fetching, publication research</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">CLAUDE_DEFAULT_MODEL</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Claude Haiku 4.5</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Fast tasks: translating Hebrew/Arabic posts to English for screening, and cluster connection checks</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">CLAUDE_FAST_MODEL</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Whisper large-v3 (Groq)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Transcribes video audio: TikTok, Instagram, Facebook, X</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
                 <tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">AI &amp; transcription</td></tr>
@@ -847,6 +858,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
                 <tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">Content access</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">yt-dlp (open source)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Downloads video audio and caption from TikTok, Instagram, Facebook, X. Binary fetched from GitHub releases on server start</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">X oEmbed (publish.twitter.com)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Fetches X post text</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
+                <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Telegram public web pages</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Reads public channel posts (text, date, views, images, short videos) and channel details for actor research — no login</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Internet Archive (Wayback Machine)</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Fallback for news articles that block direct access</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Server</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
                 <tr><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">Google favicon service</td><td style="padding:7px 10px;color:var(--text2);line-height:1.5">Source icons on carousel slides (loaded through the server image proxy)</td><td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">Admin</td><td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">—</td></tr>
                 <tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">Libraries</td></tr>
@@ -929,8 +941,42 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line
           <h2>Changelog</h2>
 
           <div class="changelog-item">
-            <div class="changelog-ver">v2.24.0</div>
+            <div class="changelog-ver">v2.28.0</div>
             <div class="changelog-date">Current version</div>
+            <ul>
+              <li><strong>Comment alignment everywhere it's readable:</strong> news sites (WordPress, Disqus, comments in the page) and public Telegram discussions, in addition to YouTube and TikTok. When a site's comment system can't be read yet, the card names it.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v2.27.0</div>
+            <div class="changelog-date">Previous version</div>
+            <ul>
+              <li><strong>Comment alignment:</strong> a rough breakdown of which entities the comments support, shown as percentages below the actor profile.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v2.26.0</div>
+            <div class="changelog-date">Previous version</div>
+            <ul>
+              <li><strong>Live configuration:</strong> Tools &amp; dependencies and Models used now come from the server itself, showing the models actually in use and which services are active. Older servers fall back to the built-in list.</li>
+              <li><strong>Prompts:</strong> the Judge prompt editor loads its default text from the server, so it always matches the running code.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v2.25.0</div>
+            <div class="changelog-date">Previous version</div>
+            <ul>
+              <li><strong>Telegram:</strong> public channel posts can be scanned; Telegram in the Source filter, history icons, actor research and carousel slides.</li>
+              <li><strong>History icons</strong> for TikTok, YouTube and Telegram, including older scans.</li>
+            </ul>
+          </div>
+
+          <div class="changelog-item">
+            <div class="changelog-ver">v2.24.0</div>
+            <div class="changelog-date">Previous version</div>
             <ul>
               <li><strong>Post history:</strong> each scan shows Claude and Jev tokens, their combined cost, and the models used; new Model filter.</li>
               <li><strong>Tools &amp; dependencies:</strong> new Models used section, plus the live model configuration reported by the server.</li>
@@ -1610,7 +1656,7 @@ function buildRelationshipSummary(entities) {
   });
   return lines.join('\n');
 }
-const APP_VERSION = '2.24.0';
+const APP_VERSION = '2.28.0';
 
 // ─────────────────────────────────────────────
 // STORAGE
@@ -2602,6 +2648,7 @@ function detectPlatformClient(url) {
   if (is('instagram.com')) return 'instagram';
   if (is('facebook.com') || is('fb.com') || is('fb.watch')) return 'facebook';
   if (is('tiktok.com')) return 'tiktok';
+  if (is('t.me') || is('telegram.me')) return 'telegram';
   if (is('youtube.com') || is('youtu.be')) return 'youtube';
   if (path && path !== '/') return 'news';
   return 'unknown';
@@ -2852,6 +2899,9 @@ function extractHandle(url, post) {
   // TikTok: handle is in the URL (tiktok.com/@handle/video/...)
   m = url.match(/tiktok\.com\/@([^\/\?]+)/i);
   if (m && m[1]) return m[1];
+  // Telegram: the channel is the handle (t.me/<channel>/<post>, also t.me/s/…)
+  m = url.match(/(?:^|\/\/)(?:www\.)?(?:t|telegram)\.me\/(?:s\/)?([A-Za-z0-9_]{3,})(?:\/\d+)?/i);
+  if (m && m[1] && m[1] !== 'c') return m[1];
   // Use author from server response if available (Instagram oEmbed)
   if (post && post.authorHandle) return post.authorHandle;
   if (post && post.author) return post.author;
@@ -2981,6 +3031,7 @@ async function analyzeWithManualText() {
     }, { jevTokens: (analysis.triage && analysis.triage.tokens) || 0, models: analysis.models || null }).catch(function(e){ console.warn('History save error:', e.message); return null; });
     result.scanId = entry ? entry.scanId : '';
     showResults(url, result);
+    loadCommentAlignment(url, postText);
     recordScan();
   } catch(e) {
     document.getElementById('loader').classList.remove('active');
@@ -3014,6 +3065,7 @@ async function performServerAnalysis(url, serverUrl) {
     { jevTokens: data.jevTokens || 0, models: data.models || (data.analysis && data.analysis.models) || null }).catch(function(e){ console.warn('History save error:', e.message); return null; });
   result.scanId = entry ? entry.scanId : '';
   showResults(finalUrl, result);
+  loadCommentAlignment(finalUrl, (data.post && data.post.text) || '');
   recordScan();
 }
 
@@ -3070,7 +3122,67 @@ function buildResult(analysis, post, entities) {
   };
 }
 
+// ─── COMMENT ALIGNMENT (rough check — percentages only, server 2.4+) ───
+let _commentsReq = 0;
+// Which posts to check. X, Facebook and Instagram are login-walled; everything else is tried.
+function commentPlatform(url) {
+  const u = String(url || '');
+  if (!/^https?:\/\//i.test(u)) return null;
+  if (/(^|\/\/|\.)(x|twitter|facebook|fb|instagram)\.com\//i.test(u) || /fb\.watch\//i.test(u)) return null;
+  if (/(youtube\.com|youtu\.be)\//i.test(u)) return 'youtube';
+  if (/tiktok\.com\//i.test(u)) return 'tiktok';
+  if (/(^|\/\/|\.)(t|telegram)\.me\//i.test(u)) return 'telegram';
+  return 'news';
+}
+function hideCommentAlignment() {
+  _commentsReq++;   // cancels any request still running for a previous post
+  const card = document.getElementById('comments-card');
+  if (card) card.style.display = 'none';
+}
+async function loadCommentAlignment(url, postText) {
+  const card = document.getElementById('comments-card'), body = document.getElementById('comments-body');
+  if (!card || !body) return;
+  const platform = commentPlatform(url);
+  if (!platform) { card.style.display = 'none'; return; }
+  const eager = platform !== 'news';   // most articles have no comments — show the card only when there's something to show
+  const req = ++_commentsReq;
+  const server = (typeof getServerUrl === 'function') ? getServerUrl() : SERVER_URL;
+  if (eager) { card.style.display = ''; body.innerHTML = '<div style="font-size:12px;color:var(--text3)">Reading comments…</div>'; }
+  try {
+    const r = await fetch(server + '/comments/analyze', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url, entities: getEntities(), postText: String(postText || '').slice(0, 2000) })
+    });
+    if (req !== _commentsReq) return;
+    if (r.status === 404) { card.style.display = 'none'; return; }   // older server without comment analysis
+    const d = await r.json();
+    if (req !== _commentsReq) return;
+    if (!r.ok || !d.success) throw new Error(d.error || ('HTTP ' + r.status));
+    if (!d.available) {
+      if (d.silent || !d.reason) { card.style.display = 'none'; return; }
+      card.style.display = '';
+      body.innerHTML = '<div style="font-size:12px;color:var(--text3)">' + escHtml(d.reason) + '</div>';
+      return;
+    }
+    const rows = (d.breakdown || []).concat([{ name: 'Not affiliated', pct: d.unaffiliatedPct, muted: true }]);
+    card.style.display = '';
+    body.innerHTML = rows.map(function(row) {
+      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">' +
+        '<div style="flex:0 0 42%;font-size:12px;color:' + (row.muted ? 'var(--text3)' : 'var(--text)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(row.name) + '</div>' +
+        '<div style="flex:1;height:6px;background:var(--bg2);border-radius:99px;overflow:hidden"><div style="width:' + Math.max(0, Math.min(100, row.pct)) + '%;height:100%;background:' + (row.muted ? 'var(--text3)' : 'var(--blue)') + '"></div></div>' +
+        '<div style="flex:0 0 40px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:700;color:' + (row.muted ? 'var(--text3)' : 'var(--text)') + '">' + row.pct + '%</div>' +
+      '</div>';
+    }).join('') +
+    '<div style="font-size:10px;color:var(--text3);margin-top:8px">Based on ' + d.sampled + ' comments' + (d.source ? ' (' + escHtml(d.source) + ')' : '') + '. A rough check, not an in-depth analysis.</div>';
+  } catch (e) {
+    if (req !== _commentsReq) return;
+    if (!eager) { card.style.display = 'none'; return; }
+    body.innerHTML = '<div style="font-size:12px;color:var(--text3)">Could not analyze the comments.</div>';
+  }
+}
+
 function showResults(url, d) {
+  hideCommentAlignment();
   const ruleEl = document.getElementById('alignment-rule');
   if (ruleEl) ruleEl.textContent = d.displayRule || 'entities at 85%+ fit';
   document.getElementById('loader').classList.remove('active');
@@ -3561,6 +3673,7 @@ async function drawPostSlide(p, date, isExcluded) {
     if (/facebook\.com|fb\.com/i.test(u)) return 'Facebook';
     if (/youtube\.com|youtu\.be/i.test(u)) return 'YouTube';
     if (/tiktok\.com/i.test(u)) return 'TikTok';
+    if (/(^|\/\/|\.)(t|telegram)\.me\//i.test(u)) return 'Telegram';
     return 'News outlet';
   }
   const platform = getPlatformDisplay(url);
@@ -3971,6 +4084,7 @@ async function exportCarouselZip(canvases, clusterName) {
 
 // ─── DEPLOYED VERSIONS ───
 async function renderDeployedVersions() {
+  fetchSystemInfo().then(renderToolsFromServer);
   const el = document.getElementById('deployed-versions-list');
   if (!el) return;
   const serverUrl = getServerUrl();
@@ -4024,7 +4138,7 @@ async function renderDeployedVersions() {
 
     if (promptRes.ok) {
       const promptData = await promptRes.json();
-      const promptNames = { scan:'Scan', coherence:'Coherence', connection:'Connection', synopsis:'Synopsis', actor:'Actor', convergent:'Convergent Interest' };
+      const promptNames = { deep_score:'Judge', scan:'Scan (legacy)', coherence:'Coherence (legacy)', connection:'Connection', synopsis:'Synopsis', actor:'Actor', convergent:'Convergent Interest' };
       (promptData.prompts || []).forEach(function(p) {
         cards.push(versionCard('Prompt: ' + (promptNames[p.name] || p.name), p.version, p.created_at, p.model.replace('claude-','').replace('-20251001','')));
       });
@@ -4038,6 +4152,56 @@ async function renderDeployedVersions() {
 
 // ─── PROMPTS ADMIN ───
 const HARDCODED_PROMPTS = {
+  deep_score: `You are a senior analyst specializing in geopolitical influence operations, information warfare, and social media manipulation, focused on the Israeli-Palestinian conflict and Israeli domestic politics.
+
+CORE QUESTION: Whose agenda does this post serve? Not whether it is true — who benefits from its spread.
+
+POST:
+\${postText}
+
+CANDIDATE ENTITIES — the entities this post is about (pre-selected by a fast screening model; some may be false positives, so score each on its merits and give low scores freely):
+\${entitySummaries}
+Field key: N = public narrative, I = strategic interest, M = modus operandi, C = analyst comments.
+
+OTHER ENTITIES (names only — not mentioned in the post, per the screening model):
+\${otherEntities}
+IMPORTANT: The main beneficiary of a post is often NOT mentioned in it — e.g. a post attacking the government serves the opposition parties, and a critique of one camp's policy serves its rivals. If any entity on this list is a primary or secondary beneficiary, include it in your results using its id. Only include entities from this list when they are primary or secondary.
+
+For EACH candidate entity, score three dimensions from 0 to 100:
+- interest: Would spreading this post advance the entity's strategic interest? Consider content (the message itself serves the entity) and context (the post attacks, discredits, or weakens the entity's rivals).
+- mo: Does the post's construction match how this entity AND its supporters typically communicate — rhetoric, framing devices, talking points, emotional register? This is about the content's style, not about who wrote it.
+- narrative: Does the post echo the entity's public narrative and talking points?
+
+SCORE CALIBRATION — use the full scale, applied to each dimension:
+- 90-100: unmistakable — the post's core message IS this entity's agenda, or it attacks this entity's main rivals in this entity's own terms.
+- 70-89: strong — the post clearly and substantially advances the entity.
+- 50-69: moderate — real but partial or diluted benefit.
+- 20-49: weak or incidental.
+- 0-19: none.
+Alignment is about whose agenda the CONTENT serves. Do not lower scores because the author seems to be a private individual, a journalist, or an organic supporter rather than an official account — an ordinary citizen's post that clearly advances a party's message aligns with that party just as much.
+
+Then set alignment:
+- "primary": the entity is a direct, main beneficiary. A primary match should typically score 80+ on interest.
+- "secondary": the entity benefits indirectly. Typically 50-80 on interest.
+- "none": no meaningful benefit.
+At most 3 primary and 2 secondary.
+
+RULES:
+- Criticism is not alignment: a post attacking an entity does not serve that entity.
+- Complete the beneficiary chain: when a post attacks or discredits one side, its rivals and opponents benefit.
+- Rankings and preference lists: the elevated entity benefits; the dismissed one does not.
+- ADVERSARIAL FRAMING: If the post portrays an entity as a threat, aggressor, or enemy, that entity cannot be a primary match on interest alone. Score it high only if the post (a) amplifies the entity's power or fear factor in a way that serves its deterrence, or (b) explicitly advocates a policy whose main beneficiary is that entity. A recommendation that incidentally benefits an adversary, while the post's framing opposes it, is at most a secondary match.
+- Quotes and clips: a statement quoted, shown, or debunked in the post may belong to someone the author opposes. Judge the author's overall framing, not isolated lines.
+- The post may be in Hebrew or Arabic. An English translation and an automatic political-context note may be provided — use them as aids, but judge the original meaning.
+
+For every entity with alignment "primary" or "secondary", write in English only:
+- why: 2-3 sentences on which interest is served and how.
+- missing: 2-3 sentences on relevant context the post omits.
+For alignment "none", leave why and missing empty.
+
+Also rate text_ai_score: 1-10 likelihood the text was AI-generated, with a one-sentence English text_ai_reason.
+
+Record your analysis by calling the record_alignment tool exactly once, with one entry per candidate entity plus any beneficiary from the other-entities list. Do not answer in plain text.`,
   scan: `You are a senior analyst specializing in geopolitical influence operations, information warfare, and social media manipulation. Your task is to determine whose agenda a social media post serves, and what context it leaves out.
 
 LANGUAGE NOTE:
@@ -4305,13 +4469,21 @@ Respond ONLY with valid JSON:
 }`,
 };
 const PROMPT_DISPLAY_NAMES = {
-  scan: 'Scan', coherence: 'Coherence', connection: 'Connection',
-  synopsis: 'Synopsis', actor: 'Actor', convergent: 'Convergent Interest'
+  deep_score: 'Judge', connection: 'Connection', synopsis: 'Synopsis', actor: 'Actor',
+  convergent: 'Convergent Interest', scan: 'Scan', coherence: 'Coherence'
 };
+// Defaults match server v2 (used when a prompt hasn't been saved yet)
 const PROMPT_MODELS = {
-  scan: 'claude-sonnet-4-5', coherence: 'claude-sonnet-4-5',
-  connection: 'claude-haiku-4-5-20251001', synopsis: 'claude-sonnet-4-5',
-  actor: 'claude-sonnet-4-5', convergent: 'claude-sonnet-4-5'
+  deep_score: 'claude-opus-5-5', connection: 'claude-haiku-4-5-20251001',
+  synopsis: 'claude-sonnet-5', actor: 'claude-sonnet-5', convergent: 'claude-sonnet-5',
+  scan: 'claude-sonnet-4-5', coherence: 'claude-sonnet-4-5'
+};
+const PROMPT_ORDER = ['deep_score', 'connection', 'synopsis', 'actor', 'convergent', 'scan', 'coherence'];
+const LEGACY_PROMPTS = { scan: true, coherence: true };   // v1 server only — v2 uses the Judge
+const PROMPT_NOTES = {
+  deep_score: 'Final alignment scores, verdict and explanations. Placeholders: \${postText}, \${entitySummaries}, \${otherEntities}.',
+  scan: 'Not used by server v2 — replaced by the Judge. Kept for servers on v1.',
+  coherence: 'Not used by server v2 — replaced by the Judge. Kept for servers on v1.'
 };
 
 let _promptsCache = {};
@@ -4325,21 +4497,33 @@ async function renderPromptsPage() {
     const prompts = {};
     (data.prompts || []).forEach(function(p){ prompts[p.name] = p; });
     _promptsCache = prompts;
-    const names = ['scan','coherence','connection','synopsis','actor','convergent'];
-    document.getElementById('prompts-list').innerHTML = names.map(function(name) {
+    let engine = null;
+    await fetchSystemInfo();
+    try { const h = await (await fetch(serverUrl + '/')).json(); engine = h.engine || null; } catch (_) {}
+    const jevCard = '<div class="card" style="padding:12px 16px;border-style:dashed">' +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+        '<span style="font-size:13px;font-weight:700;color:var(--text);min-width:140px">Screening (Jev)</span>' +
+        '<span style="font-size:11px;color:var(--text3)">' + (engine ? (engine.triage === 'off' ? 'Off — no TYPESAFE_API_KEY' : modelName(engine.triage)) : 'Requires server v2') + '</span>' +
+        '<span style="font-size:10px;color:var(--text3);margin-left:auto">Read-only · configured on Render</span>' +
+      '</div>' +
+      '<div style="margin-top:8px;font-size:11px;color:var(--text2);line-height:1.6">Not prompt-based: for every entity Jev answers three fixed questions: is it <strong>mentioned</strong>, <strong>criticized</strong>, or <strong>praised</strong> in the post? Entities scoring ≥ JEV_THRESHOLD (default 0.3) go to the Judge — at least JEV_MIN_SHORTLIST (5), at most JEV_MAX_SHORTLIST (15). All other entities reach the Judge as a names-only list.</div>' +
+    '</div>';
+    document.getElementById('prompts-list').innerHTML = jevCard + PROMPT_ORDER.map(function(name) {
       const p = prompts[name];
       const model = p ? p.model : PROMPT_MODELS[name];
       const version = p ? p.version : '—';
       const updated = p ? new Date(p.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : 'Not saved yet';
       const hasPrompt = !!p;
-      return '<div class="card" style="padding:12px 16px">' +
+      const legacy = !!LEGACY_PROMPTS[name];
+      return '<div class="card" style="padding:12px 16px' + (legacy ? ';opacity:.65' : '') + '">' +
         '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
-          '<span style="font-size:13px;font-weight:700;color:var(--text);min-width:140px">' + PROMPT_DISPLAY_NAMES[name] + '</span>' +
+          '<span style="font-size:13px;font-weight:700;color:var(--text);min-width:140px">' + PROMPT_DISPLAY_NAMES[name] + (legacy ? ' <span style="font-size:9px;font-weight:700;color:var(--amber);border:1px solid var(--amber);border-radius:99px;padding:1px 6px;margin-left:4px">LEGACY · v1 only</span>' : '') + '</span>' +
           '<span style="font-family:var(--mono);font-size:10px;background:var(--blue-dim);color:var(--blue);border:1px solid rgba(26,107,255,.2);border-radius:99px;padding:2px 8px">v' + version + '</span>' +
-          '<span style="font-size:11px;color:var(--text3)">' + model + '</span>' +
+          '<span style="font-size:11px;color:var(--text3)" title="' + escHtml(model) + '">' + modelName(model) + '</span>' +
           '<span style="font-size:10px;color:var(--text3);margin-left:auto">Last saved: ' + updated + '</span>' +
           '<button onclick="openPromptEditor(\'' + name + '\')" class="btn btn-sm btn-primary" style="font-size:11px">Edit</button>' +
         '</div>' +
+        (PROMPT_NOTES[name] ? '<div style="margin-top:6px;font-size:11px;color:var(--text3)">' + escHtml(PROMPT_NOTES[name]) + '</div>' : '') +
         (hasPrompt ? '<div style="margin-top:8px;font-size:10px;color:var(--text3);font-family:var(--mono);background:var(--bg2);border-radius:var(--radius-sm);padding:6px 8px;max-height:60px;overflow:hidden;line-height:1.5">' + escHtml(p.prompt_text.slice(0, 200)) + '...</div>' : '') +
       '</div>';
     }).join('');
@@ -4399,7 +4583,8 @@ function openPromptEditor(name) {
     document.getElementById('prompt-modal-version').value = '1.0.0';
   }
   document.getElementById('prompt-modal-model').value = p ? p.model : PROMPT_MODELS[name];
-  document.getElementById('prompt-modal-text').value = p ? p.prompt_text : (HARDCODED_PROMPTS[name] || '');
+  const serverDefault = _serverSystemInfo && _serverSystemInfo.promptDefaults && _serverSystemInfo.promptDefaults[name];
+  document.getElementById('prompt-modal-text').value = p ? p.prompt_text : (serverDefault || HARDCODED_PROMPTS[name] || '');
   document.getElementById('prompt-edit-modal').style.display = 'flex';
 }
 
@@ -4462,6 +4647,9 @@ function renderFaqAdmin() {
       el.innerHTML = '<div class="card"><div style="font-size:12px;color:var(--text3)">No FAQs yet. Click "+ Add FAQ" to create the first one.</div></div>';
       return;
     }
+    // Cache by id — the Edit button passes only the id (text in onclick broke on line breaks)
+    _faqAdminCache = {};
+    faqs.forEach(function(f) { _faqAdminCache[String(f.id)] = f; });
     // Group by group name
     const groups = {};
     faqs.forEach(function(f) {
@@ -4477,16 +4665,23 @@ function renderFaqAdmin() {
         html += '<div style="display:flex;align-items:flex-start;gap:10px">';
         html += '<div style="flex:1;min-width:0">';
         html += '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px">' + escHtml(f.question) + '</div>';
-        html += '<div style="font-size:12px;color:var(--text2);line-height:1.6">' + escHtml(f.answer) + '</div>';
+        html += '<div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-line">' + escHtml(f.answer) + '</div>';
         html += '</div>';
         html += '<div style="display:flex;gap:6px;flex-shrink:0">';
-        html += '<button class="btn btn-sm" onclick="openFaqEditor(' + f.id + ',\'' + escHtml(f.question).replace(/'/g,"\\'") + '\',\'' + escHtml(f.answer).replace(/'/g,"\\'") + '\',\'' + escHtml(f.group||'General').replace(/'/g,"\\'") + '\',' + (f.sortOrder||0) + ')">Edit</button>';
+        html += '<button class="btn btn-sm" onclick="editFaqById(\'' + escHtml(String(f.id)) + '\')">Edit</button>';
         html += '<button class="btn btn-sm btn-danger" onclick="deleteFaqItem(' + f.id + ')">Delete</button>';
         html += '</div></div></div>';
       });
     });
     el.innerHTML = html;
   });
+}
+
+let _faqAdminCache = {};
+function editFaqById(id) {
+  const f = _faqAdminCache[String(id)];
+  if (!f) { toast('FAQ not found — reload the page.'); return; }
+  openFaqEditor(f.id, f.question, f.answer, f.group || 'General', f.sortOrder || 0);
 }
 
 function openFaqEditor(id, question, answer, group, sortOrder) {
@@ -4966,11 +5161,65 @@ function openHistoryEntry(id) {
   history.pushState({ page: 'analyze', scanId: entry.scanId }, '', '#analyze/' + (entry.scanId||''));
 }
 
+// ─── TOOLS & DEPENDENCIES — live from the server (/system/info, server 2.3+) ───
+let _serverSystemInfo = null;
+async function fetchSystemInfo() {
+  const serverUrl = getServerUrl();
+  if (!serverUrl) return null;
+  try {
+    const r = await fetch(serverUrl + '/system/info');
+    if (!r.ok) return null;
+    const d = await r.json();
+    if (!d || !Array.isArray(d.models)) return null;
+    _serverSystemInfo = d;
+    return d;
+  } catch (e) { return null; }
+}
+// Services that live in the admin/client, not on the server — the server can't report these
+const CLIENT_SIDE_SERVICES = [
+  { name: 'GitHub', purpose: 'Source repositories; pushes trigger Render deploys', usedBy: 'All' },
+  { name: 'GitHub Pages', purpose: 'Hosts the admin and client apps', usedBy: 'Admin, Client' },
+  { name: 'Google favicon service', purpose: 'Source icons on carousel slides (loaded through the server image proxy)', usedBy: 'Admin' },
+  { name: 'JSZip (via cdnjs)', purpose: 'Packages carousel slides into a ZIP download', usedBy: 'Admin' },
+  { name: 'Google Fonts', purpose: 'DM Sans, DM Mono, Nunito', usedBy: 'Admin, Client' }
+];
+function toolsRow(name, purpose, usedBy, config, status) {
+  const badge = status === true ? ' <span style="font-size:9px;font-weight:700;color:var(--green)">● active</span>'
+              : status === false ? ' <span style="font-size:9px;font-weight:700;color:var(--text3)">○ not configured</span>' : '';
+  return '<tr' + (status === false ? ' style="opacity:.55"' : '') + '><td style="padding:7px 10px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:top">' + escHtml(name) + badge + '</td>' +
+    '<td style="padding:7px 10px;color:var(--text2);line-height:1.5">' + escHtml(purpose) + '</td>' +
+    '<td style="padding:7px 10px;color:var(--text3);white-space:nowrap;vertical-align:top">' + escHtml(usedBy) + '</td>' +
+    '<td style="padding:7px 10px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;vertical-align:top">' + escHtml(config || '—') + '</td></tr>';
+}
+function toolsGroup(title) {
+  return '<tr><td colspan="4" style="padding:12px 10px 5px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)">' + escHtml(title) + '</td></tr>';
+}
+function renderToolsFromServer(info) {
+  const body = document.getElementById('tools-tbody');
+  const note = document.getElementById('tools-source-note');
+  if (!body) return;
+  if (!info) { if (note) note.textContent = 'Static list — server v2.3+ reports this live.'; return; }
+  let html = toolsGroup('Models used');
+  info.models.forEach(function(m) {
+    html += toolsRow(modelName(m.id) + ' (' + m.provider + ')', m.roles.join('; '), 'Server', m.config, null);
+  });
+  const order = [];
+  info.services.forEach(function(s) { if (order.indexOf(s.group) === -1) order.push(s.group); });
+  order.forEach(function(g) {
+    html += toolsGroup(g);
+    info.services.filter(function(s) { return s.group === g; }).forEach(function(s) { html += toolsRow(s.name, s.purpose, 'Server', s.config, s.active); });
+  });
+  html += toolsGroup('Admin & client');
+  CLIENT_SIDE_SERVICES.forEach(function(s) { html += toolsRow(s.name, s.purpose, s.usedBy, '—', null); });
+  body.innerHTML = html;
+  if (note) note.textContent = 'Live from the server (v' + info.version + ') — models and services reflect its current configuration.';
+}
+
 // ─── MODEL LABELS ───
 const MODEL_NAMES = [
   [/opus-5-5/, 'Opus 5.5'], [/opus-5$/, 'Opus 5'], [/sonnet-5/, 'Sonnet 5'],
   [/sonnet-4-6/, 'Sonnet 4.6'], [/sonnet-4-5/, 'Sonnet 4.5'], [/haiku-4-5/, 'Haiku 4.5'],
-  [/jev-1\.13/i, 'Jev 1.13'], [/jev/i, 'Jev']
+  [/jev-1\.13/i, 'Jev 1.13'], [/jev/i, 'Jev'], [/whisper-large-v3/i, 'Whisper large-v3']
 ];
 function modelName(id) {
   if (!id) return '';
@@ -5046,7 +5295,7 @@ function renderHistoryList(entries) {
     const d = new Date(e.ts);
     const dateStr = d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const scanId = e.scanId || ('WBT-legacy-' + e.id);
-    const platformIcon = {x:'𝕏',instagram:'📷',facebook:'f',news:'📰',unknown:'🔗'}[e.platform||'unknown']||'🔗';
+    const platformIcon = {x:'𝕏',instagram:'📷',facebook:'f',tiktok:'♪',youtube:'▶',telegram:'✈',news:'📰',unknown:'🔗'}[effectivePlatform(e)]||'🔗';
 
     // Failed scan — distinct red styling
     if (e.failed) {
